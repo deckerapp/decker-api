@@ -1,0 +1,8 @@
+APIFlask==1.1.0
+Flask-Limiter==2.5.0
+orjson==3.7.8
+python-dotenv==0.20.0
+scylla-driver==3.25.4
+argon2-cffi==21.3.0
+pyotp==2.6.0
+PyJWT[crypto]==2.4.0
