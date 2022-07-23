@@ -36,7 +36,7 @@ app = APIFlask(
     __name__,
     title='Derailed API',
     version='v0',
-    spec_path='/openapi.json',
+    spec_path='/api/openapi.json',
     docs_ui='elements',
     docs_path='/',
 )
