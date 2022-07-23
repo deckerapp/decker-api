@@ -18,12 +18,14 @@ import os
 from apiflask import APIFlask
 from dotenv import load_dotenv
 
+from derailedapi import ratelimiter
 from derailedapi.json import ORJSONDecoder, ORJSONEncoder
 from derailedapi.users import routes
 from derailedapi.users.routes import users
 
 load_dotenv()
 routes.AUTH_KEY = os.getenv('AUTH_KEY')
+ratelimiter.AUTH_KEY = routes.AUTH_KEY
 
 from derailedapi.database import connect, sync_tables
 
@@ -38,6 +40,7 @@ app = APIFlask(
     docs_ui='elements',
     docs_path='/',
 )
+ratelimiter.limiter.init_app(app=app)
 app.config['INFO'] = {
     'description': 'The API for Derailed.',
     'termsOfService': 'https://derailed.one/terms',

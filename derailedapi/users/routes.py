@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import os
 import random
 import secrets
 
@@ -23,6 +22,7 @@ from apiflask import APIBlueprint, HTTPError
 from argon2 import PasswordHasher
 
 from ..database import RecoveryCode, Settings, Token, User
+from ..ratelimiter import limiter
 from .schemas import (
     Authorization,
     AuthorizationObject,
@@ -92,7 +92,10 @@ def is_available(username: str, discriminator: int):
 
 
 def authorize(token: str) -> User:
-    real_token = jwt.decode(token, AUTH_KEY, ['HS256'])
+    try:
+        real_token = jwt.decode(token, AUTH_KEY, ['HS256'])
+    except:
+        raise HTTPError(401, 'Authorization is Invalid.')
 
     # make sure token wasn't deleted
     # queries through several large pieces of data to avoid collision
@@ -110,6 +113,7 @@ def authorize(token: str) -> User:
 
 
 @users.post('/register')
+@limiter.limit('2/hour')
 @users.input(CreateUser)
 @users.output(
     Register, 201, description='The token which you will use for authentication'
@@ -146,6 +150,7 @@ def get(headers: AuthorizationObject):
 
 
 @users.patch('/users/@me')
+@limiter.limit('10/second')
 @users.input(EditUser)
 @users.input(Authorization, 'headers')
 @users.output(UserObject)
