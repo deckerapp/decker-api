@@ -51,7 +51,7 @@ app.config['INFO'] = {
     },
 }
 app.config['SERVERS'] = [
-    {'name': 'Production', 'url': 'https://api.derailed.one'},
+    {'name': 'Production', 'url': 'https://derailed.one/api'},
 ]
 app.config['TAGS'] = [{'name': 'users', 'description': 'Endpoints for Derailed Users'}]
 app.json_encoder = ORJSONEncoder
