@@ -35,6 +35,7 @@ from .schemas import (
 )
 
 users = APIBlueprint('users', __name__, tag='users')
+registerr = APIBlueprint('register', 'derailedapi.register', tag='users')
 hasher = PasswordHasher()
 AUTH_KEY = None
 
@@ -112,10 +113,10 @@ def authorize(token: str) -> User:
     return User.objects(User.id == tok.user_id).get()
 
 
-@users.post('/register')
+@registerr.post('/register')
 @limiter.limit('2/hour')
-@users.input(CreateUser)
-@users.output(
+@registerr.input(CreateUser)
+@registerr.output(
     Register, 201, description='The token which you will use for authentication'
 )
 def register(json: CreateUserObject):

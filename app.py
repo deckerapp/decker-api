@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 from derailedapi import ratelimiter
 from derailedapi.json import ORJSONDecoder, ORJSONEncoder
 from derailedapi.users import routes
-from derailedapi.users.routes import users
+from derailedapi.users.routes import registerr, users
 
 load_dotenv()
 routes.AUTH_KEY = os.getenv('AUTH_KEY')
@@ -40,6 +40,7 @@ app = APIFlask(
     docs_ui='elements',
     docs_path='/',
 )
+
 ratelimiter.limiter.init_app(app=app)
 app.config['INFO'] = {
     'description': 'The API for Derailed.',
@@ -59,7 +60,9 @@ app.json_decoder = ORJSONDecoder
 
 
 # register blueprints
+app.register_blueprint(registerr)
 app.register_blueprint(users)
+ratelimiter.limiter.limit('2/hour')(registerr)
 
 
 if __name__ == "__main__":
