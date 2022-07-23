@@ -17,6 +17,7 @@ import os
 
 from cassandra.auth import PlainTextAuthProvider
 from cassandra.cqlengine import columns, connection, management, models
+from cassandra.io import asyncorereactor, geventreactor
 
 from derailedapi.enforgement import forger
 
@@ -35,12 +36,19 @@ def get_hosts():
 
 
 def connect():
+    connection_class = (
+        geventreactor.GeventConnection
+        if os.getenv('GEVENT') == 'true'
+        else asyncorereactor.AsyncoreConnection
+    )
+
     connection.setup(
         get_hosts(),
         'derailed',
         auth_provider=auth_provider,
         connect_timeout=100,
         retry_connect=True,
+        connection_class=connection_class,
     )
 
 
