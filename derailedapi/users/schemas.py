@@ -31,7 +31,7 @@ discriminatoregex = re.compile(r'^[0-9]{4}$')
 class CreateUser(Schema):
     email: str = String(required=True, validate=Length(5, 200))
     username: str = String(required=True, validate=Length(1, 20))
-    password: str = String(required=True)
+    password: str = String(required=True, validate=Length(1, 128))
 
 
 class CreateUserObject(TypedDict):

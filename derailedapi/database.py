@@ -118,6 +118,24 @@ class Token(models.Model):
     oauth: int = columns.Integer()
 
 
+class Channel(models.Model):
+    __table_name__ = 'channels'
+    id: int = columns.BigInt(primary_key=True)
+    type: int = columns.Integer()
+    name: str = columns.Text()
+
+
+class Recipient(models.Model):
+    channel_id: int = columns.BigInt(primary_key=True)
+    user_id: int = columns.BigInt()
+
+
+class GroupDMChannel(models.Model):
+    channel_id: int = columns.BigInt(primary_key=True)
+    icon: str = columns.Text()
+    owner_id: int = columns.BigInt()
+
+
 def sync_tables():
     management.sync_table(User)
     management.sync_table(GuildPosition)

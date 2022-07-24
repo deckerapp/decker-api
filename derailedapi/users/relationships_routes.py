@@ -13,33 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from enum import Enum
 
 
-class Relation(Enum):
-    FRIEND = 0
-    BLOCKED = 1
-    INCOMING = 2
-    OUTGOING = 3
 
-
-class ActivityType(Enum):
-    GAME = 0
-    STREAM = 1
-    LISTENING = 3
-    CUSTOM = 4
-
-
-class TokenType(Enum):
-    USER = 0
-    BOT = 1
-    EXTERNAL = 2
-    APPLICATION = 3
-    INTERNAL = 4
-
-
-class ChannelType(Enum):
-    TEXT = 0
-    DIRECT_MESSAGE = 1
-    GROUP_DIRECT_MESSAGE = 2
-    VOICE = 3

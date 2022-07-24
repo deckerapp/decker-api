@@ -34,7 +34,7 @@ from .schemas import (
     UserObject,
 )
 
-users = APIBlueprint('users', __name__, tag='users')
+users = APIBlueprint('users', __name__)
 registerr = APIBlueprint('register', 'derailedapi.register', tag='users')
 hasher = PasswordHasher()
 AUTH_KEY = None
