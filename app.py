@@ -20,9 +20,9 @@ from dotenv import load_dotenv
 
 from derailedapi import ratelimiter
 from derailedapi.json import ORJSONDecoder, ORJSONEncoder
+from derailedapi.relationships.routes import relationships
 from derailedapi.users import routes
 from derailedapi.users.routes import registerr, users
-from derailedapi.relationships.routes import relationships
 
 load_dotenv()
 routes.AUTH_KEY = os.getenv('AUTH_KEY')

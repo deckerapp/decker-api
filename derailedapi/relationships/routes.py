@@ -14,12 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 from apiflask import APIBlueprint, HTTPError
+
 from ..database import Relationship, User
 from ..enums import Relation
 from ..users.routes import authorize
 from ..users.schemas import Authorization, AuthorizationObject
 from .schemas import MakeRelationship, MakeRelationshipData
-
 
 relationships = APIBlueprint('relationships', __name__, tag='users')
 
@@ -32,13 +32,18 @@ relationships = APIBlueprint('relationships', __name__, tag='users')
 def create_relationship(json: MakeRelationshipData, headers: AuthorizationObject):
     peer = authorize(headers['authorization'])
     try:
-        target: User = User.objects(User.username == json['username'], User.discriminator == json['discriminator']).get()
+        target: User = User.objects(
+            User.username == json['username'],
+            User.discriminator == json['discriminator'],
+        ).get()
     except:
         raise HTTPError(404, 'Target user does not exist')
 
     if json['type'] == Relation.FRIEND:
         try:
-            peer_relation: Relationship = Relationship.objects(Relationship.user_id == peer.id, Relationship.target_id == target.id).get()
+            peer_relation: Relationship = Relationship.objects(
+                Relationship.user_id == peer.id, Relationship.target_id == target.id
+            ).get()
         except:
             peer_relation = None
         else:
@@ -51,7 +56,9 @@ def create_relationship(json: MakeRelationshipData, headers: AuthorizationObject
 
         try:
             # check if this user was blocked or is already friended
-            current_relation: Relationship = Relationship.objects(Relationship.user_id == target.id, Relationship.target_id == peer.id).get()
+            current_relation: Relationship = Relationship.objects(
+                Relationship.user_id == target.id, Relationship.target_id == peer.id
+            ).get()
         except:
             pass
         else:
@@ -73,26 +80,28 @@ def create_relationship(json: MakeRelationshipData, headers: AuthorizationObject
                     peer_relation = peer_relation.update(type=Relation.FRIEND)
                 else:
                     peer_relation = Relationship.create(
-                        user_id=peer.id,
-                        target_id=target.id,
-                        type=Relation.FRIEND
+                        user_id=peer.id, target_id=target.id, type=Relation.FRIEND
                     )
                     return ''
 
         # TODO: Send these as events
-        Relationship.create(user_id=peer.id, target_id=target.id, type=Relation.OUTGOING)
-        Relationship.create(user_id=target.id, target_id=peer.id, type=Relation.INCOMING)
+        Relationship.create(
+            user_id=peer.id, target_id=target.id, type=Relation.OUTGOING
+        )
+        Relationship.create(
+            user_id=target.id, target_id=peer.id, type=Relation.INCOMING
+        )
 
         return ''
 
     elif json['type'] == Relation.BLOCKED:
         try:
-            peer_relation: Relationship = Relationship.objects(Relationship.user_id == peer.id, Relationship.target_id == target.id).get()
+            peer_relation: Relationship = Relationship.objects(
+                Relationship.user_id == peer.id, Relationship.target_id == target.id
+            ).get()
         except:
             peer_relation: Relationship = Relationship.create(
-                user_id=peer.id,
-                target_id=target.id,
-                type=Relation.BLOCKED
+                user_id=peer.id, target_id=target.id, type=Relation.BLOCKED
             )
         else:
             if peer_relation.type == Relation.BLOCKED:
@@ -115,14 +124,18 @@ def remove_relationship(user_id: int, headers: AuthorizationObject):
         raise HTTPError(404, 'Target user does not exist')
 
     try:
-        peer_relation: Relationship = Relationship.objects(Relationship.user_id == peer.id, Relationship.target_id == target.id).get()
+        peer_relation: Relationship = Relationship.objects(
+            Relationship.user_id == peer.id, Relationship.target_id == target.id
+        ).get()
     except:
         raise HTTPError(400, 'You don\'t have a relationship with this user')
     else:
         peer_relation.delete()
 
     try:
-        target_relationship: Relationship = Relationship.objects(Relationship.user_id == target.id, Relationship.target_id == peer.id).get()
+        target_relationship: Relationship = Relationship.objects(
+            Relationship.user_id == target.id, Relationship.target_id == peer.id
+        ).get()
     except:
         # blocked users
         pass

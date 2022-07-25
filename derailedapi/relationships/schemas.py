@@ -15,10 +15,13 @@ limitations under the License.
 """
 
 from __future__ import annotations
+
 from typing import TYPE_CHECKING, TypedDict
+
 from apiflask import Schema
-from apiflask.fields import Integer, String, Boolean
-from apiflask.validators import Length, Regexp, OneOf
+from apiflask.fields import Boolean, Integer, String
+from apiflask.validators import Length, OneOf, Regexp
+
 from ..users.schemas import discriminatoregex
 
 if TYPE_CHECKING:
