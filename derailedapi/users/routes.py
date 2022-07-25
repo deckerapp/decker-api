@@ -144,7 +144,7 @@ def register(json: CreateUserObject):
 @users.get('/users/@me')
 @users.input(Authorization, 'headers')
 @users.output(UserObject)
-def get(headers: AuthorizationObject):
+def get_me(headers: AuthorizationObject):
     u = dict(authorize(headers['authorization']))
     u.pop('password')
     return u
@@ -155,7 +155,7 @@ def get(headers: AuthorizationObject):
 @users.input(EditUser)
 @users.input(Authorization, 'headers')
 @users.output(UserObject)
-def edit(json: EditUserObject, headers: AuthorizationObject):
+def edit_me(json: EditUserObject, headers: AuthorizationObject):
     user = authorize(headers['authorization'])
 
     setting: Settings = (

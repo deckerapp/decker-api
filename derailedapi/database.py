@@ -90,6 +90,9 @@ class RecoveryCode(models.Model):
     code: str = columns.Text()
 
 
+# NOTE:
+# Max Outgoing Friend Requests and Incoming is 2000.
+# Max Friends is set to 4000.
 class Relationship(models.Model):
     __table_name__ = 'relationships'
     # the user id who created the relationship
