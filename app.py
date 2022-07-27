@@ -46,7 +46,7 @@ ratelimiter.limiter.init_app(app=app)
 app.config['INFO'] = {
     'description': 'The API for Derailed.',
     'termsOfService': 'https://derailed.one/terms',
-    'contact': {'name': 'Support', 'email': 'mailto:support@derailed.one'},
+    'contact': {'name': 'Support', 'email': 'support@derailed.one'},
     'license': {
         'name': 'Apache-2.0',
         'url': 'https://www.apache.org/licenses/LICENSE-2.0',
