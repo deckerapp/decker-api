@@ -13,24 +13,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from enum import Enum
 
-
-class Relation(Enum):
+class Relation:
     FRIEND = 0
     BLOCKED = 1
     INCOMING = 2
     OUTGOING = 3
 
 
-class ActivityType(Enum):
+class ActivityType:
     GAME = 0
     STREAM = 1
     LISTENING = 3
     CUSTOM = 4
 
 
-class ChannelType(Enum):
+class ChannelType:
     TEXT = 0
     DIRECT_MESSAGE = 1
     GROUP_DIRECT_MESSAGE = 2
