@@ -91,16 +91,6 @@ def create_relationship(json: MakeRelationshipData, headers: AuthorizationObject
                     )
                     return ''
 
-        # TODO: Send these as events
-        Relationship.create(
-            user_id=peer.id, target_id=target.id, type=Relation.OUTGOING
-        )
-        Relationship.create(
-            user_id=target.id, target_id=peer.id, type=Relation.INCOMING
-        )
-
-        return ''
-
     elif json['type'] == Relation.BLOCKED:
         try:
             peer_relation: Relationship = Relationship.objects(
@@ -117,6 +107,16 @@ def create_relationship(json: MakeRelationshipData, headers: AuthorizationObject
                 raise HTTPError(400, 'This user is friended')
 
             peer_relation.update(type=Relation.BLOCKED)
+
+    # TODO: Send these as events
+    Relationship.create(
+        user_id=peer.id, target_id=target.id, type=Relation.OUTGOING
+    )
+    Relationship.create(
+        user_id=target.id, target_id=peer.id, type=Relation.INCOMING
+    )
+
+    return ''
 
 
 @relationships.delete('/users/@me/relationships/<int:user_id>')
@@ -201,7 +201,7 @@ def get_relationships(headers: AuthorizationObject):
         ret.append(easily_productionify_relationship(relationship=pr, peer=True))
 
     for tr in target_relationships:
-        if tr.type == Relation.BLOCKED:
+        if tr.type == Relation.BLOCKED or tr.type == Relation.INCOMING:
             continue
 
         ret.append(easily_productionify_relationship(relationship=tr, peer=False))
