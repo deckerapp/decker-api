@@ -16,6 +16,7 @@ limitations under the License.
 from typing import Any
 
 from apiflask import APIBlueprint, HTTPError
+from apiflask.schemas import EmptySchema
 
 from ..database import Relationship, User
 from ..enums import Relation
@@ -30,7 +31,7 @@ relationships = APIBlueprint('relationships', __name__, tag='User')
 @relationships.post('/users/@me/relationships')
 @relationships.input(MakeRelationship)
 @relationships.input(Authorization, 'headers')
-@relationships.output('', 204)
+@relationships.output(EmptySchema, 204)
 def create_relationship(json: MakeRelationshipData, headers: AuthorizationObject):
     peer = authorize(headers['authorization'])
     targets: list[User] = User.objects(
@@ -120,7 +121,7 @@ def create_relationship(json: MakeRelationshipData, headers: AuthorizationObject
 
 @relationships.delete('/users/@me/relationships/<int:user_id>')
 @relationships.input(Authorization, 'headers')
-@relationships.output('', 204)
+@relationships.output(EmptySchema, 204)
 def remove_relationship(user_id: int, headers: AuthorizationObject):
     peer = authorize(headers['authorization'])
 
