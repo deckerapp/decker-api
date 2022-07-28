@@ -193,17 +193,7 @@ def get_relationships(headers: AuthorizationObject):
         Relationship.user_id == peer.id
     ).all()
 
-    target_relationships: list[Relationship] = Relationship.objects(
-        Relationship.target_id == peer.id
-    ).all()
-
     for pr in peers_relationships:
         ret.append(easily_productionify_relationship(relationship=pr, peer=True))
-
-    for tr in target_relationships:
-        if tr.type == Relation.BLOCKED or tr.type == Relation.INCOMING:
-            continue
-
-        ret.append(easily_productionify_relationship(relationship=tr, peer=False))
 
     return ret
