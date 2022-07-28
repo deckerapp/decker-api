@@ -30,14 +30,6 @@ class ActivityType(Enum):
     CUSTOM = 4
 
 
-class TokenType(Enum):
-    USER = 0
-    BOT = 1
-    EXTERNAL = 2
-    APPLICATION = 3
-    INTERNAL = 4
-
-
 class ChannelType(Enum):
     TEXT = 0
     DIRECT_MESSAGE = 1

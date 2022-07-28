@@ -13,8 +13,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import base64
+import binascii
 import os
 
+import itsdangerous
+from apiflask import HTTPError
 from cassandra.auth import PlainTextAuthProvider
 from cassandra.cqlengine import columns, connection, management, models
 from cassandra.io import asyncorereactor, geventreactor
@@ -63,6 +67,7 @@ class User(models.Model):
     banner: str = columns.Text(default='')
     flags: int = columns.Integer(default=0)
     bot: bool = columns.Boolean(default=False)
+    verified: bool | None = columns.Boolean(default=False)
 
 
 class GuildPosition(models.Model):
@@ -113,14 +118,6 @@ class Activity(models.Model):
     emoji_id: int = columns.BigInt()
 
 
-class Token(models.Model):
-    __table_name__ = 'tokens'
-    token: str = columns.Text(primary_key=True, partition_key=True)
-    user_id: int = columns.BigInt(primary_key=True, partition_key=True)
-    type: int = columns.Integer()
-    oauth: int = columns.Integer()
-
-
 class Channel(models.Model):
     __table_name__ = 'channels'
     id: int = columns.BigInt(primary_key=True)
@@ -139,6 +136,42 @@ class GroupDMChannel(models.Model):
     owner_id: int = columns.BigInt()
 
 
+def create_token(user_id: int, user_password: str) -> str:
+    signer = itsdangerous.TimestampSigner(user_password)
+    user_id = str(user_id)
+    user_id = base64.b64encode(user_id.encode())
+
+    return signer.sign(user_id).decode()
+
+
+def verify_token(token: str | None):
+    if token is None:
+        raise HTTPError(401, 'Authorization is invalid')
+
+    fragmented = token.split('.')
+    user_id = fragmented[0]
+
+    try:
+        user_id = base64.b64decode(user_id.encode())
+        user_id = int(user_id)
+    except (ValueError, binascii.Error):
+        raise HTTPError(401, 'Failed to get container volume for Authorization')
+
+    try:
+        user: User = User.objects(User.id == user_id).get()
+    except:
+        raise HTTPError(401, 'Object for Authorization not found')
+
+    signer = itsdangerous.TimestampSigner(user.password)
+
+    try:
+        signer.unsign(token)
+
+        return user
+    except (itsdangerous.BadSignature):
+        raise HTTPError(401, 'Signature on Authorization is Invalid')
+
+
 def sync_tables():
     management.sync_table(User)
     management.sync_table(GuildPosition)
@@ -146,4 +179,3 @@ def sync_tables():
     management.sync_table(RecoveryCode)
     management.sync_table(Relationship)
     management.sync_table(Activity)
-    management.sync_table(Token)

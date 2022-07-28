@@ -16,16 +16,17 @@ limitations under the License.
 import random
 import secrets
 
-import jwt
 import pyotp
 from apiflask import APIBlueprint, HTTPError
-from argon2 import PasswordHasher
+from argon2 import PasswordHasher, exceptions
 
-from ..database import RecoveryCode, Settings, Token, User
+from ..database import RecoveryCode, Settings, User, create_token, verify_token
 from ..ratelimiter import limiter
 from .schemas import (
     Authorization,
     AuthorizationObject,
+    CreateToken,
+    CreateTokenObject,
     CreateUser,
     CreateUserObject,
     EditUser,
@@ -37,7 +38,6 @@ from .schemas import (
 users = APIBlueprint('users', __name__)
 registerr = APIBlueprint('register', 'derailedapi.register', tag='users')
 hasher = PasswordHasher()
-AUTH_KEY = None
 
 
 def new_code() -> str:
@@ -93,24 +93,26 @@ def is_available(username: str, discriminator: int):
 
 
 def authorize(token: str) -> User:
-    try:
-        real_token = jwt.decode(token, AUTH_KEY, ['HS256'])
-    except:
-        raise HTTPError(401, 'Authorization is Invalid.')
+    return verify_token(token=token)
 
-    # make sure token wasn't deleted
-    # queries through several large pieces of data to avoid collision
-    try:
-        tok: Token = Token.objects(
-            Token.token == real_token['token'], Token.user_id == real_token['user_id']
-        ).get()
-    except Exception as e:
-        print(e)
-        raise HTTPError(401, 'Authorization is Invalid.')
 
-    # any deleted user would be stripped of their
-    # tokens, so this should be error-safe.
-    return User.objects(User.id == tok.user_id).get()
+def verify_mfa(user_id: int, code: int | str | None) -> None:
+    setting: Settings = (
+        Settings.objects(Settings.user_id == user_id)
+        .only(['mfa_enabled', 'mfa_code'])
+        .get()
+    )
+
+    recoveries = get_recoveries(user_id=user_id)
+
+    if setting.mfa_enabled:
+        totp = pyotp.TOTP(setting.mfa_code)
+
+        if not code:
+            raise HTTPError(403, 'mfa_code is a required field for users with mfa.')
+
+        if code not in recoveries or code != totp.now():
+            raise HTTPError(403, 'mfa code is invalid.')
 
 
 @registerr.post('/register')
@@ -120,6 +122,13 @@ def authorize(token: str) -> User:
     Register, 201, description='The token which you will use for authentication'
 )
 def register(json: CreateUserObject):
+    try:
+        User.objects(User.email == json['email']).get()
+    except:
+        pass
+    else:
+        raise HTTPError(400, 'This email is already used.')
+
     discriminator = get_available_discriminator(username=json['username'])
 
     if discriminator is None:
@@ -135,19 +144,44 @@ def register(json: CreateUserObject):
     )
     Settings.create(user_id=user.id)
 
-    token = Token.create(token=new_code(), user_id=user.id, type=0)
-    tk = jwt.encode(dict(token), AUTH_KEY)
-
-    return {'token': tk}
+    return {'token': create_token(user_id=user.id, user_password=user.password)}
 
 
 @users.get('/users/@me')
 @users.input(Authorization, 'headers')
 @users.output(UserObject)
 def get_me(headers: AuthorizationObject):
-    u = dict(authorize(headers['authorization']))
+    me = authorize(headers['authorization'])
+
+    if me.verified is None:
+        me = me.update(verified=False)
+
+    u = dict(me)
     u.pop('password')
     return u
+
+
+@users.post('/login')
+@users.input(CreateToken)
+@users.output(Register)
+def login(json: CreateTokenObject):
+    try:
+        with_pswd: User = (
+            User.objects(User.email == json['email']).only(['password', 'id']).get()
+        )
+    except:
+        raise HTTPError(400, 'Invalid email or password')
+
+    try:
+        hasher.verify(with_pswd.password, json['password'])
+    except exceptions.VerifyMismatchError:
+        raise HTTPError(400, 'Invalid email or password')
+
+    verify_mfa(user_id=with_pswd.id, code=json.get('code'))
+
+    return {
+        'token': create_token(user_id=with_pswd.id, user_password=with_pswd.password)
+    }
 
 
 @users.patch('/users/@me')
@@ -157,25 +191,6 @@ def get_me(headers: AuthorizationObject):
 @users.output(UserObject)
 def edit_me(json: EditUserObject, headers: AuthorizationObject):
     user = authorize(headers['authorization'])
-
-    setting: Settings = (
-        Settings.objects(Settings.user_id == user.id)
-        .only(['mfa_enabled', 'mfa_code'])
-        .get()
-    )
-
-    mfa = json.get('mfa_code')
-
-    recoveries = get_recoveries(user_id=user.id)
-
-    if setting.mfa_enabled:
-        totp = pyotp.TOTP(setting.mfa_code)
-
-        if not mfa:
-            raise HTTPError(403, 'mfa_code is a required field for users with mfa.')
-
-        if mfa not in recoveries or mfa != totp.now():
-            raise HTTPError(403, 'mfa code is invalid.')
 
     email = json.get('email')
     discriminator = json.get('discriminator')

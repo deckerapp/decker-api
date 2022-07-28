@@ -15,34 +15,21 @@ limitations under the License.
 """
 import os
 
-import jwt
 from flask import request
 from flask_limiter import Limiter, util
 
-from .database import Token
-
-AUTH_KEY = None
+from .database import verify_token
 
 
 def key_func():
     auth = request.headers.get('Authorization', None)
 
-    if auth is None:
-        return util.get_remote_address()
-
     try:
-        real_token = jwt.decode(auth, AUTH_KEY, ['HS256'])
-    except:
-        return util.get_remote_address()
-
-    try:
-        token: Token = Token.objects(
-            Token.token == real_token['token'], Token.user_id == real_token['user_id']
-        ).get()
+        user = verify_token(token=auth)
     except:
         return util.get_remote_address()
     else:
-        return str(token.user_id)
+        return str(user.id)
 
 
 limiter = Limiter(

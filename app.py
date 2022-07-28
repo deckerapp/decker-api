@@ -25,8 +25,6 @@ from derailedapi.users import routes
 from derailedapi.users.routes import registerr, users
 
 load_dotenv()
-routes.AUTH_KEY = os.getenv('AUTH_KEY')
-ratelimiter.AUTH_KEY = routes.AUTH_KEY
 
 from derailedapi.database import connect, sync_tables
 

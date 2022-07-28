@@ -22,14 +22,14 @@ if TYPE_CHECKING:
     from typing_extensions import NotRequired
 
 from apiflask import Schema
-from apiflask.fields import Boolean, Integer, String
+from apiflask.fields import Boolean, Email, Integer, String
 from apiflask.validators import Length, Regexp
 
 discriminatoregex = re.compile(r'^[0-9]{4}$')
 
 
 class CreateUser(Schema):
-    email: str = String(required=True, validate=Length(5, 200))
+    email: str = Email(required=True, validate=Length(5, 200))
     username: str = String(required=True, validate=Length(1, 20))
     password: str = String(required=True, validate=Length(1, 128))
 
@@ -68,13 +68,6 @@ class AuthorizationObject(TypedDict):
     authorization: str
 
 
-class Token(TypedDict):
-    token: str
-    user_id: int
-    type: int
-    oauth: int | None
-
-
 class UserObject(Schema):
     id: int = Integer()
     email: str = String()
@@ -84,3 +77,15 @@ class UserObject(Schema):
     banner: str = String()
     flags: int = Integer()
     bot: bool = Boolean()
+
+
+class CreateToken(Schema):
+    email: str = Email(required=True)
+    password: str = String(validate=Length(1, 128))
+    mfa_code: str = String()
+
+
+class CreateTokenObject(TypedDict):
+    email: str
+    password: str
+    mfa_code: NotRequired[str]
