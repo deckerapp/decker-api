@@ -68,15 +68,18 @@ class AuthorizationObject(TypedDict):
     authorization: str
 
 
-class UserObject(Schema):
+class PublicUserObject(Schema):
     id: int = Integer()
-    email: str = String()
     username: str = String()
     discriminator: str = String()
     avatar: str = String()
     banner: str = String()
     flags: int = Integer()
     bot: bool = Boolean()
+
+
+class UserObject(PublicUserObject):
+    email: str = String()
 
 
 class CreateToken(Schema):

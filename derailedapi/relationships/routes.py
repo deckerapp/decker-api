@@ -13,15 +13,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+from typing import Any
+
 from apiflask import APIBlueprint, HTTPError
 
 from ..database import Relationship, User
 from ..enums import Relation
 from ..users.routes import authorize
 from ..users.schemas import Authorization, AuthorizationObject
-from .schemas import MakeRelationship, MakeRelationshipData
+from .schemas import MakeRelationship, MakeRelationshipData, Relationship as RelationshipData
 
-relationships = APIBlueprint('relationships', __name__, tag='users')
+relationships = APIBlueprint('relationships', __name__, tag='User')
 
 
 # TODO: Implement events here.
@@ -31,12 +33,16 @@ relationships = APIBlueprint('relationships', __name__, tag='users')
 @relationships.output('', 204)
 def create_relationship(json: MakeRelationshipData, headers: AuthorizationObject):
     peer = authorize(headers['authorization'])
-    try:
-        target: User = User.objects(
-            User.username == json['username'],
-            User.discriminator == json['discriminator'],
-        ).get()
-    except:
+    targets: list[User] = User.objects(
+        User.username == json['username'],
+    ).all()
+    target: User = None
+
+    for ts in targets:
+        if ts.discriminator == json['discriminator']:
+            target = ts
+
+    if target is None:
         raise HTTPError(404, 'Target user does not exist')
 
     if json['type'] == Relation.FRIEND:
@@ -144,3 +150,59 @@ def remove_relationship(user_id: int, headers: AuthorizationObject):
             target_relationship.delete()
 
     return ''
+
+
+def easily_productionify_relationship(
+    relationship: Relationship, peer: bool
+) -> dict[Any, Any]:
+    ret = dict(relationship)
+
+    if peer:
+        ret.pop('user_id')
+
+        target: User = User.objects(User.id == ret.pop('target_id')).get()
+        dtarg = dict(target)
+        dtarg.pop('email')
+        dtarg.pop('password')
+        dtarg.pop('verified')
+
+        ret['user'] = target
+        return ret
+    else:
+        ret.pop('target_id')
+
+        peer_user: User = User.objects(User.id == ret.pop('user_id')).get()
+        dtarg = dict(peer_user)
+        dtarg.pop('email')
+        dtarg.pop('password')
+        dtarg.pop('verified')
+
+        ret['user'] = target
+        return ret
+
+
+@relationships.get('/users/@me/relationships')
+@relationships.input(Authorization, 'headers')
+@relationships.output(RelationshipData(many=True), description='Your relationships')
+def get_relationships(headers: AuthorizationObject):
+    peer = authorize(headers['authorization'])
+    ret = []
+
+    peers_relationships: list[Relationship] = Relationship.objects(
+        Relationship.user_id == peer.id
+    ).all()
+
+    target_relationships: list[Relationship] = Relationship.objects(
+        Relationship.target_id == peer.id
+    ).all()
+
+    for pr in peers_relationships:
+        ret.append(easily_productionify_relationship(relationship=pr, peer=True))
+
+    for tr in target_relationships:
+        if tr.type == Relation.BLOCKED:
+            continue
+
+        ret.append(easily_productionify_relationship(relationship=tr, peer=False))
+
+    return ret

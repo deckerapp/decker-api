@@ -19,10 +19,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, TypedDict
 
 from apiflask import Schema
-from apiflask.fields import Boolean, Integer, String
+from apiflask.fields import Boolean, Integer, String, Nested, List
 from apiflask.validators import Length, OneOf, Regexp
 
-from ..users.schemas import discriminatoregex
+from ..users.schemas import PublicUserObject, discriminatoregex
 
 if TYPE_CHECKING:
     from typing_extensions import NotRequired
@@ -30,9 +30,9 @@ if TYPE_CHECKING:
 
 class MakeRelationship(Schema):
     type: int = Integer(validate=OneOf([0, 1]), required=True)
-    username: str = String(validate=Length(1, 20))
-    discriminator: str = String(validate=Regexp(discriminatoregex))
-    accept: bool = Boolean()
+    username: str = String(required=True, validate=Length(1, 20))
+    discriminator: str = String(required=True, validate=Regexp(discriminatoregex))
+    accept: bool = Boolean(required=True)
 
 
 class MakeRelationshipData(TypedDict):
@@ -40,3 +40,9 @@ class MakeRelationshipData(TypedDict):
     username: str
     discriminator: str
     accept: NotRequired[bool]
+
+
+class Relationship(Schema):
+    type: int = Integer()
+    user: PublicUserObject = Nested(PublicUserObject)
+

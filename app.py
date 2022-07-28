@@ -13,15 +13,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import os
-
 from apiflask import APIFlask
 from dotenv import load_dotenv
 
 from derailedapi import ratelimiter
 from derailedapi.json import ORJSONDecoder, ORJSONEncoder
 from derailedapi.relationships.routes import relationships
-from derailedapi.users import routes
 from derailedapi.users.routes import registerr, users
 
 load_dotenv()
@@ -53,7 +50,7 @@ app.config['INFO'] = {
 app.config['SERVERS'] = [
     {'name': 'Production', 'url': 'https://derailed.one/api'},
 ]
-app.tags = ['users']
+app.tags = ['User']
 app.json_encoder = ORJSONEncoder
 app.json_decoder = ORJSONDecoder
 
