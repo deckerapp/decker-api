@@ -89,7 +89,8 @@ def create_relationship(json: MakeRelationshipData, headers: AuthorizationObject
                     peer_relation = Relationship.create(
                         user_id=peer.id, target_id=target.id, type=Relation.FRIEND
                     )
-                    return ''
+
+                return ''
 
     elif json['type'] == Relation.BLOCKED:
         try:
