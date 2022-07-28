@@ -81,7 +81,7 @@ class UserObject(Schema):
 
 class CreateToken(Schema):
     email: str = Email(required=True)
-    password: str = String(validate=Length(1, 128))
+    password: str = String(required=True, validate=Length(1, 128))
     mfa_code: str = String()
 
 
