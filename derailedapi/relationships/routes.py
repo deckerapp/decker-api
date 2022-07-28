@@ -167,7 +167,7 @@ def easily_productionify_relationship(
         dtarg.pop('password')
         dtarg.pop('verified')
 
-        ret['user'] = target
+        ret['user'] = dtarg
         return ret
     else:
         ret.pop('target_id')
@@ -178,7 +178,7 @@ def easily_productionify_relationship(
         dtarg.pop('password')
         dtarg.pop('verified')
 
-        ret['user'] = target
+        ret['user'] = dtarg
         return ret
 
 
