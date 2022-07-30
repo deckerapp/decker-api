@@ -35,4 +35,4 @@ limitations under the License.
 
 import os
 
-os.system(f'gunicorn -w 3 -k gevent -b 0.0.0.0:5000 app:app')
+os.system(f'gunicorn -w $((`nproc` * 2 + 1)) -b 0.0.0.0:5000 app:app')

@@ -18,13 +18,33 @@ from typing import Any
 from apiflask import APIBlueprint, HTTPError
 from apiflask.schemas import EmptySchema
 
-from ..database import Relationship, User
+from ..database import Relationship, Settings, User
 from ..enums import Relation
 from ..users.routes import authorize
 from ..users.schemas import Authorization, AuthorizationObject
-from .schemas import MakeRelationship, MakeRelationshipData, Relationship as RelationshipData
+from .schemas import MakeRelationship, MakeRelationshipData, ModifyRelationship, ModifyRelationshipData, Relationship as RelationshipData
 
 relationships = APIBlueprint('relationships', __name__, tag='User')
+
+
+# make sure these users have no passed their specific limit of 1000 relationships
+def didnt_pass_max_relationships(user: User, target: User):
+    target_setting: Settings = Settings.objects(Settings.user_id == target.id).only(['friend_requests_off']).get()
+
+    if target_setting.friend_requests_off:
+        raise HTTPError(400, 'This user has turned off friend requests')
+
+    user_main_relationships: int = Relationship.objects(Relationship.user_id == user.id).count()
+    user_targeted_relationships: int = Relationship.objects(Relationship.target_id == user.id).count()
+
+    if user_main_relationships + user_targeted_relationships == 1000:
+        raise HTTPError(400, 'You have reached your maximum relationship limit')
+
+    target_main_relationships: int = Relationship.objects(Relationship.user_id == target.id).count()
+    target_targeted_relationships: int = Relationship.objects(Relationship.target_id == target.id).count()
+
+    if target_main_relationships + target_targeted_relationships == 1000:
+        raise HTTPError(400, 'Target user has reached their maximum relationship limit')
 
 
 # TODO: Implement events here.
@@ -37,14 +57,20 @@ def create_relationship(json: MakeRelationshipData, headers: AuthorizationObject
     targets: list[User] = User.objects(
         User.username == json['username'],
     ).all()
-    target: User = None
+    target: User | None = None
 
     for ts in targets:
         if ts.discriminator == json['discriminator']:
             target = ts
+            break
 
     if target is None:
         raise HTTPError(404, 'Target user does not exist')
+
+    if target.id == peer.id:
+        raise HTTPError(400, 'You cannot friend yourself')
+
+    didnt_pass_max_relationships(user=peer, target=target)
 
     if json['type'] == Relation.FRIEND:
         try:
@@ -73,33 +99,6 @@ def create_relationship(json: MakeRelationshipData, headers: AuthorizationObject
                 raise HTTPError(401, 'This user has blocked you')
             elif current_relation.type == Relation.FRIEND:
                 raise HTTPError(400, 'This user has already friended you')
-            elif current_relation.type == Relation.INCOMING and json['accept'] is False:
-                current_relation.delete()
-
-                if peer_relation:
-                    peer_relation.delete()
-
-                return ''
-            elif current_relation.type == Relation.INCOMING and json['accept'] is True:
-                current_relation = current_relation.update(type=Relation.FRIEND)
-
-                if peer_relation:
-                    peer_relation = peer_relation.update(type=Relation.FRIEND)
-                else:
-                    peer_relation = Relationship.create(
-                        user_id=peer.id, target_id=target.id, type=Relation.FRIEND
-                    )
-
-                return ''
-
-        # TODO: Send these as events
-        Relationship.create(
-            user_id=peer.id, target_id=target.id, type=Relation.OUTGOING
-        )
-        Relationship.create(
-            user_id=target.id, target_id=peer.id, type=Relation.INCOMING
-        )
-
     else:
         try:
             peer_relation: Relationship = Relationship.objects(
@@ -117,6 +116,45 @@ def create_relationship(json: MakeRelationshipData, headers: AuthorizationObject
 
             peer_relation.update(type=Relation.BLOCKED)
 
+    # TODO: Send these as events
+    Relationship.create(
+        user_id=peer.id, target_id=target.id, type=Relation.OUTGOING
+    )
+    Relationship.create(
+        user_id=target.id, target_id=peer.id, type=Relation.INCOMING
+    )
+
+
+@relationships.patch('/users/@me/relationships')
+@relationships.input(Authorization, 'headers')
+@relationships.input(ModifyRelationship, 'json')
+@relationships.output(EmptySchema, 204)
+def modify_relationship(json: ModifyRelationshipData, headers: AuthorizationObject):
+    peer = authorize(headers['authorization'])
+
+    try:
+        target: User = User.objects(
+            User.id == json['user_id']
+        ).get()
+    except:
+        raise HTTPError(400, 'Target user does not exist')
+
+    try:
+        peer_relationship: Relationship = Relationship.objects(
+            Relationship.user_id == peer.id, Relationship.target_id == target.id
+        ).get()
+    except:
+        raise HTTPError(400, 'You do not have a relationship with this user')
+
+    if peer_relationship.type == Relation.INCOMING:
+        target_relationship: Relationship = Relationship.objects(Relationship.user_id == target.id, Relationship.target_id == peer.id).get()
+
+        target_relationship.update(type=Relation.FRIEND)
+        peer_relationship.update(type=Relation.FRIEND)
+    else:
+        raise HTTPError(400, 'You cannot modify this type of relationship')
+
+    return ''
 
 @relationships.delete('/users/@me/relationships/<int:user_id>')
 @relationships.input(Authorization, 'headers')

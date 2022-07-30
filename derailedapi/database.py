@@ -87,6 +87,7 @@ class Settings(models.Model):
     status: str = columns.Text(default='invisible')
     mfa_enabled: bool = columns.Boolean(default=False)
     mfa_code: str = columns.Text()
+    friend_requests_off: bool = columns.Boolean(default=False)
 
 
 class RecoveryCode(models.Model):
@@ -126,11 +127,13 @@ class Channel(models.Model):
 
 
 class Recipient(models.Model):
+    __table_name__ = 'recipients'
     channel_id: int = columns.BigInt(primary_key=True)
     user_id: int = columns.BigInt()
 
 
 class GroupDMChannel(models.Model):
+    __table_name__ = 'group_dm_channels'
     channel_id: int = columns.BigInt(primary_key=True)
     icon: str = columns.Text()
     owner_id: int = columns.BigInt()

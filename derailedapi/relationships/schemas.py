@@ -32,14 +32,21 @@ class MakeRelationship(Schema):
     type: int = Integer(validate=OneOf([0, 1]), required=True)
     username: str = String(required=True, validate=Length(1, 20))
     discriminator: str = String(required=True, validate=Regexp(discriminatoregex))
+
+
+class ModifyRelationship(Schema):
+    user_id: int = Integer(required=True)
     accept: bool = Boolean(required=True)
+
+
+class ModifyRelationshipData(TypedDict):
+    accept: bool
 
 
 class MakeRelationshipData(TypedDict):
     type: int
     username: str
     discriminator: str
-    accept: NotRequired[bool]
 
 
 class Relationship(Schema):
