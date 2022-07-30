@@ -22,26 +22,44 @@ from ..database import Relationship, Settings, User
 from ..enums import Relation
 from ..users.routes import authorize
 from ..users.schemas import Authorization, AuthorizationObject
-from .schemas import MakeRelationship, MakeRelationshipData, ModifyRelationship, ModifyRelationshipData, Relationship as RelationshipData
+from .schemas import (
+    MakeRelationship,
+    MakeRelationshipData,
+    ModifyRelationship,
+    ModifyRelationshipData,
+)
+from .schemas import Relationship as RelationshipData
 
 relationships = APIBlueprint('relationships', __name__, tag='User')
 
 
 # make sure these users have no passed their specific limit of 1000 relationships
 def didnt_pass_max_relationships(user: User, target: User):
-    target_setting: Settings = Settings.objects(Settings.user_id == target.id).only(['friend_requests_off']).get()
+    target_setting: Settings = (
+        Settings.objects(Settings.user_id == target.id)
+        .only(['friend_requests_off'])
+        .get()
+    )
 
     if target_setting.friend_requests_off:
         raise HTTPError(400, 'This user has turned off friend requests')
 
-    user_main_relationships: int = Relationship.objects(Relationship.user_id == user.id).count()
-    user_targeted_relationships: int = Relationship.objects(Relationship.target_id == user.id).count()
+    user_main_relationships: int = Relationship.objects(
+        Relationship.user_id == user.id
+    ).count()
+    user_targeted_relationships: int = Relationship.objects(
+        Relationship.target_id == user.id
+    ).count()
 
     if user_main_relationships + user_targeted_relationships == 1000:
         raise HTTPError(400, 'You have reached your maximum relationship limit')
 
-    target_main_relationships: int = Relationship.objects(Relationship.user_id == target.id).count()
-    target_targeted_relationships: int = Relationship.objects(Relationship.target_id == target.id).count()
+    target_main_relationships: int = Relationship.objects(
+        Relationship.user_id == target.id
+    ).count()
+    target_targeted_relationships: int = Relationship.objects(
+        Relationship.target_id == target.id
+    ).count()
 
     if target_main_relationships + target_targeted_relationships == 1000:
         raise HTTPError(400, 'Target user has reached their maximum relationship limit')
@@ -117,12 +135,8 @@ def create_relationship(json: MakeRelationshipData, headers: AuthorizationObject
             peer_relation.update(type=Relation.BLOCKED)
 
     # TODO: Send these as events
-    Relationship.create(
-        user_id=peer.id, target_id=target.id, type=Relation.OUTGOING
-    )
-    Relationship.create(
-        user_id=target.id, target_id=peer.id, type=Relation.INCOMING
-    )
+    Relationship.create(user_id=peer.id, target_id=target.id, type=Relation.OUTGOING)
+    Relationship.create(user_id=target.id, target_id=peer.id, type=Relation.INCOMING)
 
 
 @relationships.patch('/users/@me/relationships')
@@ -133,9 +147,7 @@ def modify_relationship(json: ModifyRelationshipData, headers: AuthorizationObje
     peer = authorize(headers['authorization'])
 
     try:
-        target: User = User.objects(
-            User.id == json['user_id']
-        ).get()
+        target: User = User.objects(User.id == json['user_id']).get()
     except:
         raise HTTPError(400, 'Target user does not exist')
 
@@ -147,7 +159,9 @@ def modify_relationship(json: ModifyRelationshipData, headers: AuthorizationObje
         raise HTTPError(400, 'You do not have a relationship with this user')
 
     if peer_relationship.type == Relation.INCOMING:
-        target_relationship: Relationship = Relationship.objects(Relationship.user_id == target.id, Relationship.target_id == peer.id).get()
+        target_relationship: Relationship = Relationship.objects(
+            Relationship.user_id == target.id, Relationship.target_id == peer.id
+        ).get()
 
         target_relationship.update(type=Relation.FRIEND)
         peer_relationship.update(type=Relation.FRIEND)
@@ -155,6 +169,7 @@ def modify_relationship(json: ModifyRelationshipData, headers: AuthorizationObje
         raise HTTPError(400, 'You cannot modify this type of relationship')
 
     return ''
+
 
 @relationships.delete('/users/@me/relationships/<int:user_id>')
 @relationships.input(Authorization, 'headers')
