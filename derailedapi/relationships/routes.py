@@ -139,8 +139,8 @@ def create_relationship(json: MakeRelationshipData, headers: AuthorizationObject
 
 
 @relationships.patch('/users/@me/relationships')
-@relationships.input(Authorization, 'headers')
 @relationships.input(ModifyRelationship, 'json')
+@relationships.input(Authorization, 'headers')
 @relationships.output(EmptySchema, 204)
 @relationships.doc(tag='Relationships')
 def modify_relationship(json: ModifyRelationshipData, headers: AuthorizationObject):
