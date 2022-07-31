@@ -75,12 +75,10 @@ def create_relationship(json: MakeRelationshipData, headers: AuthorizationObject
     targets: list[User] = User.objects(
         User.username == json['username'],
     ).all()
-    target: User | None = None
-
-    for ts in targets:
-        if ts.discriminator == json['discriminator']:
-            target = ts
-            break
+    target: User | None = next(
+        (ts for ts in targets if ts.discriminator == json['discriminator']),
+        None,
+    )
 
     if target is None:
         raise HTTPError(404, 'Target user does not exist')
@@ -215,23 +213,18 @@ def easily_productionify_relationship(
 
         target: User = User.objects(User.id == ret.pop('target_id')).get()
         dtarg = dict(target)
-        dtarg.pop('email')
-        dtarg.pop('password')
-        dtarg.pop('verified')
-
-        ret['user'] = dtarg
-        return ret
     else:
         ret.pop('target_id')
 
         peer_user: User = User.objects(User.id == ret.pop('user_id')).get()
         dtarg = dict(peer_user)
-        dtarg.pop('email')
-        dtarg.pop('password')
-        dtarg.pop('verified')
 
-        ret['user'] = dtarg
-        return ret
+    dtarg.pop('email')
+    dtarg.pop('password')
+    dtarg.pop('verified')
+
+    ret['user'] = dtarg
+    return ret
 
 
 @relationships.get('/users/@me/relationships')
@@ -239,13 +232,11 @@ def easily_productionify_relationship(
 @relationships.output(RelationshipData(many=True), description='Your relationships')
 def get_relationships(headers: AuthorizationObject):
     peer = authorize(headers['authorization'])
-    ret = []
-
     peers_relationships: list[Relationship] = Relationship.objects(
         Relationship.user_id == peer.id
     ).all()
 
-    for pr in peers_relationships:
-        ret.append(easily_productionify_relationship(relationship=pr, peer=True))
-
-    return ret
+    return [
+        easily_productionify_relationship(relationship=pr, peer=True)
+        for pr in peers_relationships
+    ]

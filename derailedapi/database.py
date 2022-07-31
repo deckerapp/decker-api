@@ -33,10 +33,7 @@ auth_provider = PlainTextAuthProvider(
 def get_hosts():
     hs = os.getenv('SCYLLA_HOSTS')
 
-    if hs is None:
-        return None
-
-    return hs.split(',')
+    return None if hs is None else hs.split(',')
 
 
 def connect():
