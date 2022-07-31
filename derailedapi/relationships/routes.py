@@ -30,7 +30,7 @@ from .schemas import (
 )
 from .schemas import Relationship as RelationshipData
 
-relationships = APIBlueprint('relationships', __name__, tag='User')
+relationships = APIBlueprint('relationships', __name__)
 
 
 # make sure these users have no passed their specific limit of 1000 relationships
@@ -70,6 +70,7 @@ def didnt_pass_max_relationships(user: User, target: User):
 @relationships.input(MakeRelationship)
 @relationships.input(Authorization, 'headers')
 @relationships.output(EmptySchema, 204)
+@relationships.doc(tag='Relationships')
 def create_relationship(json: MakeRelationshipData, headers: AuthorizationObject):
     peer = authorize(headers['authorization'])
     targets: list[User] = User.objects(
@@ -141,6 +142,7 @@ def create_relationship(json: MakeRelationshipData, headers: AuthorizationObject
 @relationships.input(Authorization, 'headers')
 @relationships.input(ModifyRelationship, 'json')
 @relationships.output(EmptySchema, 204)
+@relationships.doc(tag='Relationships')
 def modify_relationship(json: ModifyRelationshipData, headers: AuthorizationObject):
     peer = authorize(headers['authorization'])
 
@@ -172,6 +174,7 @@ def modify_relationship(json: ModifyRelationshipData, headers: AuthorizationObje
 @relationships.delete('/users/@me/relationships/<int:user_id>')
 @relationships.input(Authorization, 'headers')
 @relationships.output(EmptySchema, 204)
+@relationships.doc(tag='Relationships')
 def remove_relationship(user_id: int, headers: AuthorizationObject):
     peer = authorize(headers['authorization'])
 
@@ -230,6 +233,7 @@ def easily_productionify_relationship(
 @relationships.get('/users/@me/relationships')
 @relationships.input(Authorization, 'headers')
 @relationships.output(RelationshipData(many=True), description='Your relationships')
+@relationships.doc(tag='Relationships')
 def get_relationships(headers: AuthorizationObject):
     peer = authorize(headers['authorization'])
     peers_relationships: list[Relationship] = Relationship.objects(

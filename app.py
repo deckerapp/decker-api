@@ -50,7 +50,7 @@ app.config['INFO'] = {
 app.config['SERVERS'] = [
     {'name': 'Production', 'url': 'https://derailed.one/api'},
 ]
-app.tags = ['User']
+app.tags = ['Users', 'Relationships']
 app.json_encoder = ORJSONEncoder
 app.json_decoder = ORJSONDecoder
 

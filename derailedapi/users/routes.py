@@ -36,7 +36,7 @@ from .schemas import (
 )
 
 users = APIBlueprint('users', __name__)
-registerr = APIBlueprint('register', 'derailedapi.register', tag='User')
+registerr = APIBlueprint('register', 'derailedapi.register')
 hasher = PasswordHasher()
 
 
@@ -121,6 +121,7 @@ def verify_mfa(user_id: int, code: int | str | None) -> None:
 @registerr.output(
     Register, 201, description='The token which you will use for authentication'
 )
+@registerr.doc(tag='Users')
 def register(json: CreateUserObject):
     try:
         User.objects(User.email == json['email']).get()
@@ -150,6 +151,7 @@ def register(json: CreateUserObject):
 @users.get('/users/@me')
 @users.input(Authorization, 'headers')
 @users.output(UserObject)
+@users.doc(tag='Users')
 def get_me(headers: AuthorizationObject):
     me = authorize(headers['authorization'])
 
@@ -164,6 +166,7 @@ def get_me(headers: AuthorizationObject):
 @users.post('/login')
 @users.input(CreateToken)
 @users.output(Register)
+@users.doc(tag='Users')
 def login(json: CreateTokenObject):
     try:
         with_pswd: User = (
@@ -189,6 +192,7 @@ def login(json: CreateTokenObject):
 @users.input(EditUser)
 @users.input(Authorization, 'headers')
 @users.output(UserObject)
+@users.doc(tag='Users')
 def edit_me(json: EditUserObject, headers: AuthorizationObject):
     user = authorize(headers['authorization'])
 
