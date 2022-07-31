@@ -207,20 +207,14 @@ def remove_relationship(user_id: int, headers: AuthorizationObject):
 
 
 def easily_productionify_relationship(
-    relationship: Relationship, peer: bool
+    relationship: Relationship
 ) -> dict[Any, Any]:
     ret = dict(relationship)
 
-    if peer:
-        ret.pop('user_id')
+    ret.pop('user_id')
 
-        target: User = User.objects(User.id == ret.pop('target_id')).get()
-        dtarg = dict(target)
-    else:
-        ret.pop('target_id')
-
-        peer_user: User = User.objects(User.id == ret.pop('user_id')).get()
-        dtarg = dict(peer_user)
+    target: User = User.objects(User.id == ret.pop('target_id')).get()
+    dtarg = dict(target)
 
     dtarg.pop('email')
     dtarg.pop('password')
@@ -235,12 +229,12 @@ def easily_productionify_relationship(
 @relationships.output(RelationshipData(many=True), description='Your relationships')
 @relationships.doc(tag='Relationships')
 def get_relationships(headers: AuthorizationObject):
-    peer = authorize(headers['authorization'])
-    peers_relationships: list[Relationship] = Relationship.objects(
-        Relationship.user_id == peer.id
+    me = authorize(headers['authorization'])
+    relationships: list[Relationship] = Relationship.objects(
+        Relationship.user_id == me.id
     ).all()
 
     return [
-        easily_productionify_relationship(relationship=pr, peer=True)
-        for pr in peers_relationships
+        easily_productionify_relationship(relationship=pr)
+        for pr in relationships
     ]
