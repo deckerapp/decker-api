@@ -179,3 +179,6 @@ def sync_tables():
     management.sync_table(RecoveryCode)
     management.sync_table(Relationship)
     management.sync_table(Activity)
+    management.sync_table(Channel)
+    management.sync_table(Recipient)
+    management.sync_table(GroupDMChannel)

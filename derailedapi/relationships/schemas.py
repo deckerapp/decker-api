@@ -19,7 +19,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, TypedDict
 
 from apiflask import Schema
-from apiflask.fields import Boolean, Integer, List, Nested, String
+from apiflask.fields import Boolean, Integer, Nested, String
 from apiflask.validators import Length, OneOf, Regexp
 
 from ..users.schemas import PublicUserObject, discriminatoregex

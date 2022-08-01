@@ -13,3 +13,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+from apiflask import Schema
+from apiflask.fields import Integer, String
+
+
+class Channel(Schema):
+    id = Integer(required=True)
+    type = Integer(required=True, strict=True)
+    name = String(required=True)
+    icon = String()
+    owner_id = Integer()

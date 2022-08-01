@@ -18,6 +18,7 @@ from typing import Any
 from apiflask import APIBlueprint, HTTPError
 from apiflask.schemas import EmptySchema
 
+from ..channels.routes import create_dm_channel
 from ..database import Relationship, Settings, User
 from ..enums import Relation
 from ..users.routes import authorize
@@ -165,6 +166,8 @@ def modify_relationship(json: ModifyRelationshipData, headers: AuthorizationObje
 
         target_relationship.update(type=Relation.FRIEND)
         peer_relationship.update(type=Relation.FRIEND)
+
+        create_dm_channel(user_id=peer.id, recipient_id=target.id)
     else:
         raise HTTPError(400, 'You cannot modify this type of relationship')
 

@@ -45,9 +45,9 @@ class Register(Schema):
 
 
 class EditUser(Schema):
-    email: str = String(validate=Length(5, 200))
+    email: str = Email(validate=Length(5, 200))
     username: str = String(validate=Length(1, 20))
-    password: str = String()
+    password: str = String(validate=Length(1, 128))
     discriminator: str = String(validate=Regexp(discriminatoregex))
     mfa_code: int = Integer()
 

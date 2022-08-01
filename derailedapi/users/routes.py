@@ -196,6 +196,8 @@ def login(json: CreateTokenObject):
 def edit_me(json: EditUserObject, headers: AuthorizationObject):
     user = authorize(headers['authorization'])
 
+    verify_mfa(user_id=user.id, code=json['mfa_code'])
+
     email = json.get('email')
     discriminator = json.get('discriminator')
     username = json.get('username')
