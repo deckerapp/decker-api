@@ -58,7 +58,7 @@ def get_channel(channel_id: int, headers: AuthorizationObject):
         ).get()
         gc = dict(group_channel)
         gc.pop('channel_id')
-        channel_data.update(gc)
+        channel_data |= gc
 
         return channel_data
 
