@@ -167,12 +167,12 @@ def verify_token(token: str | None, fields: list[str] | None = None):
     try:
         signer.unsign(token)
 
-        if fields is None:
-            fielded = User.objects(User.id == user_id).get()
-        else:
-            fielded = User.objects(User.id == user_id).only(fields).get()
+        return (
+            User.objects(User.id == user_id).get()
+            if fields is None
+            else User.objects(User.id == user_id).only(fields).get()
+        )
 
-        return fielded
     except (itsdangerous.BadSignature):
         raise HTTPError(401, 'Signature on Authorization is Invalid')
 
