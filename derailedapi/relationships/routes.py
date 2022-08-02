@@ -206,9 +206,7 @@ def remove_relationship(user_id: int, headers: AuthorizationObject):
     return ''
 
 
-def easily_productionify_relationship(
-    relationship: Relationship
-) -> dict[Any, Any]:
+def easily_productionify_relationship(relationship: Relationship) -> dict[Any, Any]:
     ret = dict(relationship)
 
     ret.pop('user_id')
@@ -234,7 +232,4 @@ def get_relationships(headers: AuthorizationObject):
         Relationship.user_id == me.id
     ).all()
 
-    return [
-        easily_productionify_relationship(relationship=pr)
-        for pr in relationships
-    ]
+    return [easily_productionify_relationship(relationship=pr) for pr in relationships]
