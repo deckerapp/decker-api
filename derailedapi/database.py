@@ -144,7 +144,7 @@ def create_token(user_id: int, user_password: str) -> str:
     return signer.sign(user_id).decode()
 
 
-def verify_token(token: str | None):
+def verify_token(token: str | None, fields: list[str] | None = None):
     if token is None:
         raise HTTPError(401, 'Authorization is invalid')
 
@@ -158,7 +158,7 @@ def verify_token(token: str | None):
         raise HTTPError(401, 'Failed to get container volume for Authorization')
 
     try:
-        user: User = User.objects(User.id == user_id).get()
+        user: User = User.objects(User.id == user_id).only(['password']).get()
     except:
         raise HTTPError(401, 'Object for Authorization not found')
 
@@ -167,7 +167,12 @@ def verify_token(token: str | None):
     try:
         signer.unsign(token)
 
-        return user
+        if fields is None:
+            fielded = User.objects(User.id == user_id).get()
+        else:
+            fielded = User.objects(User.id == user_id).only(fields).get()
+
+        return fielded
     except (itsdangerous.BadSignature):
         raise HTTPError(401, 'Signature on Authorization is Invalid')
 
