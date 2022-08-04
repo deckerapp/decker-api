@@ -26,7 +26,7 @@ from cassandra.cqlengine import columns, connection, management, models
 from cassandra.io import asyncorereactor, geventreactor
 
 from derailedapi.enforgement import forger
-from derailedapi.enums import ContentFilterLevel, NotificationLevel
+from derailedapi.enums import ContentFilterLevel, MFALevel, NSFWLevel, NotificationLevel
 
 auth_provider = PlainTextAuthProvider(
     os.getenv('SCYLLA_USER'), os.getenv('SCYLLA_PASSWORD')
@@ -162,18 +162,18 @@ class Guild(models.Model):
         default=NotificationLevel.ALL
     )
     explicit_content_filter: int = columns.Integer(default=ContentFilterLevel.DISABLED)
-    mfa_level: int = columns.Integer()
+    mfa_level: int = columns.Integer(default=MFALevel.NONE)
     system_channel_id: int = columns.BigInt()
     system_channel_flags: int = columns.Integer()
     rules_channel_id: int = columns.BigInt()
-    max_presences: int = columns.Integer()
-    max_members: int = columns.Integer()
-    vanity_url_code: str = columns.Text(index=True)
+    max_presences: int = columns.Integer(default=10000)
+    max_members: int = columns.Integer(default=4000)
+    vanity_url_code: str = columns.Text()
     description: str = columns.Text()
     banner: str = columns.Text()
     preferred_locale: str = columns.Text()
     guild_updates_channel_id: int = columns.BigInt()
-    nsfw_level: int = columns.Integer()
+    nsfw_level: int = columns.Integer(default=NSFWLevel.UNKNOWN)
 
 
 class Feature(models.Model):

@@ -61,3 +61,8 @@ class NSFWLevel:
     SAFE = 1
     EXPLICIT = 2
     AGE_RESTRICTED = 3
+
+
+class MFALevel:
+    NONE = 0
+    ELEVATED = 1
