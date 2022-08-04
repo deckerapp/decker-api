@@ -16,6 +16,8 @@ limitations under the License.
 import base64
 import binascii
 import os
+import msgspec
+from typing import Any
 
 import itsdangerous
 from apiflask import HTTPError
@@ -24,6 +26,7 @@ from cassandra.cqlengine import columns, connection, management, models
 from cassandra.io import asyncorereactor, geventreactor
 
 from derailedapi.enforgement import forger
+from derailedapi.enums import ContentFilterLevel, NotificationLevel
 
 auth_provider = PlainTextAuthProvider(
     os.getenv('SCYLLA_USER'), os.getenv('SCYLLA_PASSWORD')
@@ -51,6 +54,14 @@ def connect():
         retry_connect=True,
         connection_class=connection_class,
     )
+
+
+class Event(msgspec.Struct):
+    name: str
+    data: dict
+    guild_id: int | None = None
+    user_id: int | None = None
+    user_ids: list[int] | None = None
 
 
 class User(models.Model):
@@ -136,6 +147,89 @@ class GroupDMChannel(models.Model):
     owner_id: int = columns.BigInt()
 
 
+class Guild(models.Model):
+    __table_name__ = 'guilds'
+    id: int = columns.BigInt(primary_key=True)
+    name: str = columns.Text()
+    icon: str = columns.Text()
+    splash: str = columns.Text()
+    discovery_splash: str = columns.Text()
+    owner_id: int = columns.BigInt()
+    default_permissions: int = columns.BigInt()
+    afk_channel_id: int = columns.BigInt()
+    afk_timeout: int = columns.Integer()
+    default_message_notification_level: int = columns.Integer(default=NotificationLevel.ALL)
+    explicit_content_filter: int = columns.Integer(default=ContentFilterLevel.DISABLED)
+    mfa_level: int = columns.Integer()
+    system_channel_id: int = columns.BigInt()
+    system_channel_flags: int = columns.Integer()
+    rules_channel_id: int = columns.BigInt()
+    max_presences: int = columns.Integer()
+    max_members: int = columns.Integer()
+    vanity_url_code: str = columns.Text(index=True)
+    description: str = columns.Text()
+    banner: str = columns.Text()
+    preferred_locale: str = columns.Text()
+    guild_updates_channel_id: int = columns.BigInt()
+    nsfw_level: int = columns.Integer()
+
+
+class Feature(models.Model):
+    __table_name__ = 'features'
+    guild_id: int = columns.BigInt(primary_key=True)
+    value: str = columns.Text()
+
+
+class Role(models.Model):
+    __table_name__ = 'roles'
+    id: int = columns.BigInt(primary_key=True)
+    guild_id: int = columns.BigInt(primary_key=True)
+    name: str = columns.Text()
+    color: int = columns.Integer()
+    viewable: bool = columns.Boolean()
+    icon: str = columns.Text()
+    unicode_emoji: str = columns.Text()
+    position: int = columns.Integer()
+    permissions: int = columns.BigInt()
+    mentionable: bool = columns.Boolean()
+
+
+class Member(models.Model):
+    __table_name__ = 'members'
+    guild_id: int = columns.BigInt(primary_key=True)
+    user_id: int = columns.BigInt(index=True)
+    nick: str = columns.Text()
+    avatar: str = columns.Text()
+    joined_at: str = columns.DateTime()
+    deaf: bool = columns.Boolean()
+    mute: bool = columns.Boolean()
+    pending: bool = columns.Boolean()
+    communication_disabled_until: str = columns.DateTime()
+
+
+class MemberRole(models.Model):
+    __table_name__ = 'member_roles'
+    guild_id: int = columns.BigInt(primary_key=True)
+    user_id: int = columns.BigInt(index=True)
+    role_id: int = columns.BigInt()
+
+
+class Ban(models.Model):
+    __table_name__ = 'bans'
+    guild_id: int = columns.BigInt(primary_key=True)
+    user_id: int = columns.BigInt()
+    reason: str = columns.Text()
+
+
+class GatewaySessionLimit(models.Model):
+    __table_name__ = 'gateway_session_limit'
+    __options__ = {'default_time_to_live': 43200}
+    user_id: int = columns.BigInt(primary_key=True)
+    total: int = columns.Integer(default=1000)
+    remaining: int = columns.Integer(default=1000)
+    max_concurrency: int = columns.Integer(default=16)
+
+
 def create_token(user_id: int, user_password: str) -> str:
     signer = itsdangerous.TimestampSigner(user_password)
     user_id = str(user_id)
@@ -144,7 +238,11 @@ def create_token(user_id: int, user_password: str) -> str:
     return signer.sign(user_id).decode()
 
 
-def verify_token(token: str | None, fields: list[str] | None = None):
+def verify_token(
+    token: str | None,
+    fields: list[str] | str | None = None,
+    rm_fields: list[str] | str | None = None,
+) -> User:
     if token is None:
         raise HTTPError(401, 'Authorization is invalid')
 
@@ -167,14 +265,54 @@ def verify_token(token: str | None, fields: list[str] | None = None):
     try:
         signer.unsign(token)
 
-        return (
-            User.objects(User.id == user_id).get()
-            if fields is None
-            else User.objects(User.id == user_id).only(fields).get()
-        )
+        if fields is not None and not isinstance(fields, list):
+            fields = list(fields)
+
+        if rm_fields is not None and not isinstance(rm_fields, list):
+            rm_fields = list(rm_fields)
+
+        if fields in ['id', ['id']]:
+            user.id = user_id
+            return user
+        elif fields and rm_fields:
+            return User.objects(User.id == user_id).only(fields).defer(rm_fields).get()
+        elif fields:
+            return User.objects(User.id == user_id).only(fields).get()
+        elif rm_fields:
+            return User.objects(User.id == user_id).defer(rm_fields).get()
+        else:
+            return User.objects(User.id == user_id).get()
 
     except (itsdangerous.BadSignature):
         raise HTTPError(401, 'Signature on Authorization is Invalid')
+
+
+def objectify(data: dict[str, Any] | list[Any]) -> dict[str, Any] | list[Any]:
+    if isinstance(data, dict):
+        for k, v in data.items():
+            if isinstance(v, int) and v > 2147483647 or isinstance(v, int) and k == 'permissions':
+                data[k] = str(v)
+            elif isinstance(v, list):
+                new_value = []
+
+                for item in v:
+                    if isinstance(item, (dict, list)):
+                        new_value.append(objectify(item))
+                    else:
+                        new_value.append(item)
+
+    elif isinstance(data, list):
+        new_data = []
+
+        for item in data:
+            if isinstance(item, (dict, list)):
+                new_data.append(objectify(item))
+            else:
+                new_data.append(item)
+
+        data = new_data
+
+    return data
 
 
 def sync_tables():

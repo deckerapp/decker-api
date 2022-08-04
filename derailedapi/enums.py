@@ -34,3 +34,31 @@ class ChannelType:
     DIRECT_MESSAGE = 1
     GROUP_DIRECT_MESSAGE = 2
     VOICE = 3
+    CATEGORY = 4
+
+
+class NotificationLevel:
+    ALL = 0
+    MENTIONS = 1
+
+
+class ContentFilterLevel:
+    DISABLED = 0
+    MEMBERS_WITHOUT_ROLES = 1
+    ALL = 2
+
+
+class VerificationLevel:
+    NONE = 0
+    LOW = 1
+    MEDIUM = 2
+    HIGH = 3
+    VERY_HIGH = 4
+
+
+class NSFWLevel:
+    UNKNOWN = 0
+    SAFE = 1
+    EXPLICIT = 2
+    AGE_RESTRICTED = 3
+

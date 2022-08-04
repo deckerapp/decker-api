@@ -18,7 +18,7 @@ from typing import Any
 from apiflask import APIBlueprint, HTTPError
 from apiflask.schemas import EmptySchema
 
-from ..database import Relationship, Settings, User
+from ..database import Relationship, Settings, User, objectify
 from ..enums import Relation
 from ..users.routes import authorize
 from ..users.schemas import Authorization, AuthorizationObject
@@ -144,7 +144,7 @@ def create_relationship(json: MakeRelationshipData, headers: AuthorizationObject
 @relationships.output(EmptySchema, 204)
 @relationships.doc(tag='Relationships')
 def modify_relationship(json: ModifyRelationshipData, headers: AuthorizationObject):
-    peer = authorize(headers['authorization'])
+    peer = authorize(headers['authorization'], 'id')
 
     try:
         target: User = User.objects(User.id == json['user_id']).get()
@@ -176,7 +176,7 @@ def modify_relationship(json: ModifyRelationshipData, headers: AuthorizationObje
 @relationships.output(EmptySchema, 204)
 @relationships.doc(tag='Relationships')
 def remove_relationship(user_id: int, headers: AuthorizationObject):
-    peer = authorize(headers['authorization'])
+    peer = authorize(headers['authorization'], 'id')
 
     try:
         target: User = User.objects(User.id == user_id).get()
@@ -227,9 +227,11 @@ def easily_productionify_relationship(relationship: Relationship) -> dict[Any, A
 @relationships.output(RelationshipData(many=True), description='Your relationships')
 @relationships.doc(tag='Relationships')
 def get_relationships(headers: AuthorizationObject):
-    me = authorize(headers['authorization'])
+    me = authorize(headers['authorization'], 'id')
     relationships: list[Relationship] = Relationship.objects(
         Relationship.user_id == me.id
     ).all()
 
-    return [easily_productionify_relationship(relationship=pr) for pr in relationships]
+    return objectify(
+        [easily_productionify_relationship(relationship=pr) for pr in relationships]
+    )

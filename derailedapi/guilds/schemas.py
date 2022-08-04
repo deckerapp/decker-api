@@ -14,9 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 from apiflask import Schema
-from apiflask.fields import Boolean, Integer, Nested, String
-from apiflask.validators import Length, OneOf, Regexp
+from apiflask.fields import String
+from apiflask.validators import Length, Regexp
 
 
 class CreateGuild(Schema):
-    name = String(validate=Length(2, 100))
+    name = String(validate=[Length(2, 100), Regexp('^[a-z0-9-]{1}[a-z0-9-]{0,20}$')])
+    icon = String()

@@ -7,4 +7,5 @@ argon2-cffi==21.3.0
 pyotp==2.6.0
 PyJWT[crypto]==2.4.0
 Cython==0.29.30
+msgspec==0.8.0
 gunicorn[gevent]==20.1.0; platform_system!="Windows"

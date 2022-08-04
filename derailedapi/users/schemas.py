@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from typing_extensions import NotRequired
 
 from apiflask import Schema
-from apiflask.fields import Boolean, Email, Integer, String
+from apiflask.fields import Boolean, Email, Integer, String, Nested
 from apiflask.validators import Length, Regexp
 
 discriminatoregex = re.compile(r'^[0-9]{4}$')
@@ -69,7 +69,7 @@ class AuthorizationObject(TypedDict):
 
 
 class PublicUserObject(Schema):
-    id: int = Integer()
+    id: str = String()
     username: str = String()
     discriminator: str = String()
     avatar: str = String()
@@ -92,3 +92,15 @@ class CreateTokenObject(TypedDict):
     email: str
     password: str
     mfa_code: NotRequired[str]
+
+
+class SessionLimit(Schema):
+    total = Integer()
+    remaining = Integer()
+    max_concurrency = Integer()
+
+
+class Gateway(Schema):
+    url = String()
+    shards = Integer()
+    session_start_limit = Nested(SessionLimit)

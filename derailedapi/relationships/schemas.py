@@ -16,16 +16,13 @@ limitations under the License.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypedDict
+from typing import TypedDict
 
 from apiflask import Schema
-from apiflask.fields import Boolean, Integer, List, Nested, String
+from apiflask.fields import Boolean, Integer, Nested, String
 from apiflask.validators import Length, OneOf, Regexp
 
 from ..users.schemas import PublicUserObject, discriminatoregex
-
-if TYPE_CHECKING:
-    from typing_extensions import NotRequired
 
 
 class MakeRelationship(Schema):

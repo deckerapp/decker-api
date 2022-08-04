@@ -20,7 +20,16 @@ import pyotp
 from apiflask import APIBlueprint, HTTPError
 from argon2 import PasswordHasher, exceptions
 
-from ..database import RecoveryCode, Settings, User, create_token, verify_token
+from ..database import (
+    Member,
+    RecoveryCode,
+    GatewaySessionLimit,
+    Settings,
+    User,
+    create_token,
+    objectify,
+    verify_token,
+)
 from ..ratelimiter import limiter
 from .schemas import (
     Authorization,
@@ -31,6 +40,7 @@ from .schemas import (
     CreateUserObject,
     EditUser,
     EditUserObject,
+    Gateway,
     Register,
     UserObject,
 )
@@ -92,8 +102,8 @@ def is_available(username: str, discriminator: int):
         raise HTTPError(400, 'Discriminator is already taken')
 
 
-def authorize(token: str) -> User:
-    return verify_token(token=token)
+def authorize(token: str | None, fields: list[str] | None = None, rm_fields: list[str] | str | None = None) -> User:
+    return verify_token(token=token, fields=fields)
 
 
 def verify_mfa(user_id: int, code: int | str | None) -> None:
@@ -223,5 +233,30 @@ def edit_me(json: EditUserObject, headers: AuthorizationObject):
 
     update = user.update(**query)
     ret = dict(update)
-    ret.pop('password')
-    return ret
+    return objectify(ret)
+
+
+@users.get('/gateway')
+@users.input(Authorization, 'headers')
+@users.output(Gateway)
+def get_gateway(headers: AuthorizationObject):
+    user = authorize(headers['authorization'], 'id')
+
+    try:
+        gateway_session_limit = dict(GatewaySessionLimit.objects(GatewaySessionLimit.user_id == user.id).defer(['user_id']).get())
+    except:
+        gateway_session_limit = dict(GatewaySessionLimit.create(user_id=user.id))
+        gateway_session_limit.pop('user_id')
+
+    if user.bot:
+        guild_count = Member.objects(Member.user_id == user.id).count()
+
+        shards = max(int(guild_count / 1000), 1)
+    else:
+        shards = 1
+
+    return {
+        'url': 'wss://gateway.derailed.one',
+        'shards': shards,
+        'session_start_limit': gateway_session_limit
+    }

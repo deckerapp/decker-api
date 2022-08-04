@@ -31,10 +31,9 @@ sync_tables()
 app = APIFlask(
     __name__,
     title='Derailed API',
-    version='v0',
-    spec_path='/openapi.json',
-    docs_ui='elements',
-    docs_path='/',
+    version='v1',
+    spec_path=None,
+    docs_path=None,
 )
 
 ratelimiter.limiter.init_app(app=app)
