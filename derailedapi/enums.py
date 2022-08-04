@@ -61,4 +61,3 @@ class NSFWLevel:
     SAFE = 1
     EXPLICIT = 2
     AGE_RESTRICTED = 3
-

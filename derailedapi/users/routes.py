@@ -21,9 +21,9 @@ from apiflask import APIBlueprint, HTTPError
 from argon2 import PasswordHasher, exceptions
 
 from ..database import (
+    GatewaySessionLimit,
     Member,
     RecoveryCode,
-    GatewaySessionLimit,
     Settings,
     User,
     create_token,
@@ -102,7 +102,11 @@ def is_available(username: str, discriminator: int):
         raise HTTPError(400, 'Discriminator is already taken')
 
 
-def authorize(token: str | None, fields: list[str] | None = None, rm_fields: list[str] | str | None = None) -> User:
+def authorize(
+    token: str | None,
+    fields: list[str] | None = None,
+    rm_fields: list[str] | str | None = None,
+) -> User:
     return verify_token(token=token, fields=fields)
 
 
@@ -243,7 +247,11 @@ def get_gateway(headers: AuthorizationObject):
     user = authorize(headers['authorization'], 'id')
 
     try:
-        gateway_session_limit = dict(GatewaySessionLimit.objects(GatewaySessionLimit.user_id == user.id).defer(['user_id']).get())
+        gateway_session_limit = dict(
+            GatewaySessionLimit.objects(GatewaySessionLimit.user_id == user.id)
+            .defer(['user_id'])
+            .get()
+        )
     except:
         gateway_session_limit = dict(GatewaySessionLimit.create(user_id=user.id))
         gateway_session_limit.pop('user_id')
@@ -258,5 +266,5 @@ def get_gateway(headers: AuthorizationObject):
     return {
         'url': 'wss://gateway.derailed.one',
         'shards': shards,
-        'session_start_limit': gateway_session_limit
+        'session_start_limit': gateway_session_limit,
     }

@@ -16,10 +16,10 @@ limitations under the License.
 import base64
 import binascii
 import os
-import msgspec
 from typing import Any
 
 import itsdangerous
+import msgspec
 from apiflask import HTTPError
 from cassandra.auth import PlainTextAuthProvider
 from cassandra.cqlengine import columns, connection, management, models
@@ -158,7 +158,9 @@ class Guild(models.Model):
     default_permissions: int = columns.BigInt()
     afk_channel_id: int = columns.BigInt()
     afk_timeout: int = columns.Integer()
-    default_message_notification_level: int = columns.Integer(default=NotificationLevel.ALL)
+    default_message_notification_level: int = columns.Integer(
+        default=NotificationLevel.ALL
+    )
     explicit_content_filter: int = columns.Integer(default=ContentFilterLevel.DISABLED)
     mfa_level: int = columns.Integer()
     system_channel_id: int = columns.BigInt()
@@ -290,7 +292,12 @@ def verify_token(
 def objectify(data: dict[str, Any] | list[Any]) -> dict[str, Any] | list[Any]:
     if isinstance(data, dict):
         for k, v in data.items():
-            if isinstance(v, int) and v > 2147483647 or isinstance(v, int) and k == 'permissions':
+            if (
+                isinstance(v, int)
+                and v > 2147483647
+                or isinstance(v, int)
+                and k == 'permissions'
+            ):
                 data[k] = str(v)
             elif isinstance(v, list):
                 new_value = []

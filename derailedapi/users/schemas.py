@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from typing_extensions import NotRequired
 
 from apiflask import Schema
-from apiflask.fields import Boolean, Email, Integer, String, Nested
+from apiflask.fields import Boolean, Email, Integer, Nested, String
 from apiflask.validators import Length, Regexp
 
 discriminatoregex = re.compile(r'^[0-9]{4}$')
