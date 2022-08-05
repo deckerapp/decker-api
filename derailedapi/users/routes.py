@@ -129,14 +129,7 @@ def verify_mfa(user_id: int, code: int | str | None) -> None:
             raise HTTPError(403, 'mfa code is invalid.')
 
 
-@registerr.post('/register')
-@limiter.limit('2/hour')
-@registerr.input(CreateUser)
-@registerr.output(
-    Register, 201, description='The token which you will use for authentication'
-)
-@registerr.doc(tag='Users')
-def register(json: CreateUserObject):
+def create_user(json: CreateUser) -> User:
     try:
         User.objects(User.email == json['email']).get()
     except:
@@ -159,6 +152,19 @@ def register(json: CreateUserObject):
     )
     Settings.create(user_id=user.id)
 
+    return user
+
+
+@registerr.post('/register')
+@limiter.limit('2/hour')
+@registerr.input(CreateUser)
+@registerr.output(
+    Register, 201, description='The token which you will use for authentication'
+)
+@registerr.doc(tag='Users')
+def register(json: CreateUserObject):
+    user = create_user(json=json)
+
     return {'token': create_token(user_id=user.id, user_password=user.password)}
 
 
@@ -167,14 +173,12 @@ def register(json: CreateUserObject):
 @users.output(UserObject)
 @users.doc(tag='Users')
 def get_me(headers: AuthorizationObject):
-    me = authorize(headers['authorization'])
+    me = authorize(headers['authorization'], rm_fields=['password'])
 
     if me.verified is None:
         me = me.update(verified=False)
 
-    u = dict(me)
-    u.pop('password')
-    return u
+    return dict(me)
 
 
 @users.post('/login')
@@ -243,8 +247,9 @@ def edit_me(json: EditUserObject, headers: AuthorizationObject):
 @users.get('/gateway')
 @users.input(Authorization, 'headers')
 @users.output(Gateway)
+@users.doc(tag='Users')
 def get_gateway(headers: AuthorizationObject):
-    user = authorize(headers['authorization'], 'id')
+    user = authorize(headers['authorization'], ['id'])
 
     try:
         gateway_session_limit = dict(

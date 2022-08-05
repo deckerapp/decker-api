@@ -20,6 +20,7 @@ from derailedapi import ratelimiter
 from derailedapi.json import ORJSONDecoder, ORJSONEncoder
 from derailedapi.relationships.routes import relationships
 from derailedapi.users.routes import registerr, users
+from derailedapi.guilds.routes import guilds
 
 load_dotenv()
 
@@ -32,8 +33,9 @@ app = APIFlask(
     __name__,
     title='Derailed API',
     version='v1',
-    spec_path=None,
-    docs_path=None,
+    spec_path='/__development/developer-kelp.open.json',
+    docs_path='/__development/developer_ke-lp-dash.board',
+    docs_ui='elements',
 )
 
 ratelimiter.limiter.init_app(app=app)
@@ -46,10 +48,7 @@ app.config['INFO'] = {
         'url': 'https://www.apache.org/licenses/LICENSE-2.0',
     },
 }
-app.config['SERVERS'] = [
-    {'name': 'Production', 'url': 'https://derailed.one/api'},
-]
-app.tags = ['Users', 'Relationships']
+app.tags = ['Users', 'Relationships', 'Guilds']
 app.json_encoder = ORJSONEncoder
 app.json_decoder = ORJSONDecoder
 
@@ -58,6 +57,7 @@ app.json_decoder = ORJSONDecoder
 app.register_blueprint(registerr)
 app.register_blueprint(users)
 app.register_blueprint(relationships)
+app.register_blueprint(guilds)
 ratelimiter.limiter.limit('2/hour')(registerr)
 
 

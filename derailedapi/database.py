@@ -16,7 +16,7 @@ limitations under the License.
 import base64
 import binascii
 import os
-from typing import Any
+from typing import Any, TypeVar
 
 import itsdangerous
 import msgspec
@@ -26,11 +26,12 @@ from cassandra.cqlengine import columns, connection, management, models
 from cassandra.io import asyncorereactor, geventreactor
 
 from derailedapi.enforgement import forger
-from derailedapi.enums import ContentFilterLevel, MFALevel, NSFWLevel, NotificationLevel
+from derailedapi.enums import ContentFilterLevel, MFALevel, NotificationLevel, NSFWLevel, VerificationLevel
 
 auth_provider = PlainTextAuthProvider(
     os.getenv('SCYLLA_USER'), os.getenv('SCYLLA_PASSWORD')
 )
+T = TypeVar('T', dict[str, Any], list[Any])
 
 
 def get_hosts():
@@ -120,6 +121,7 @@ class Relationship(models.Model):
 class Activity(models.Model):
     __table_name__ = 'activities'
     user_id: int = columns.BigInt(primary_key=True)
+    guild_id: int = columns.BigInt()
     type: int = columns.Integer(default=0)
     created_at: str = columns.DateTime()
     content: str = columns.Text()
@@ -140,11 +142,38 @@ class Recipient(models.Model):
     user_id: int = columns.BigInt()
 
 
-class GroupDMChannel(models.Model):
+class DMChannel(models.Model):
+    __table_name__ = 'dm_channels'
+    channel_id: int = columns.BigInt(primary_key=True)
+    last_message_id: int = columns.BigInt()
+
+
+class GroupDMChannel(DMChannel):
     __table_name__ = 'group_dm_channels'
+
     channel_id: int = columns.BigInt(primary_key=True)
     icon: str = columns.Text()
     owner_id: int = columns.BigInt()
+
+
+class GuildChannel(models.Model):
+    channel_id: int = columns.BigInt(primary_key=True)
+    guild_id: int = columns.BigInt(index=True)
+    position: int = columns.Integer()
+    parent_id: int = columns.BigInt()
+    nsfw: bool = columns.Boolean(default=False)
+
+
+class CategoryChannel(GuildChannel):
+    __table_name__ = 'category_channels'
+
+
+class TextChannel(GuildChannel):
+    __table_name__ = 'guild_text_channels'
+
+    rate_limit_per_user: int = columns.Integer(default=0)
+    topic: str = columns.Text()
+    last_message_id: int = columns.BigInt()
 
 
 class Guild(models.Model):
@@ -174,6 +203,7 @@ class Guild(models.Model):
     preferred_locale: str = columns.Text()
     guild_updates_channel_id: int = columns.BigInt()
     nsfw_level: int = columns.Integer(default=NSFWLevel.UNKNOWN)
+    verification_level: int = columns.Integer(default=VerificationLevel.NONE)
 
 
 class Feature(models.Model):
@@ -207,6 +237,7 @@ class Member(models.Model):
     mute: bool = columns.Boolean()
     pending: bool = columns.Boolean()
     communication_disabled_until: str = columns.DateTime()
+    owner: bool = columns.Boolean()
 
 
 class MemberRole(models.Model):
@@ -289,14 +320,14 @@ def verify_token(
         raise HTTPError(401, 'Signature on Authorization is Invalid')
 
 
-def objectify(data: dict[str, Any] | list[Any]) -> dict[str, Any] | list[Any]:
+def objectify(data: T) -> T:
     if isinstance(data, dict):
         for k, v in data.items():
             if (
                 isinstance(v, int)
                 and v > 2147483647
                 or isinstance(v, int)
-                and k == 'permissions'
+                and 'permissions' in k
             ):
                 data[k] = str(v)
             elif isinstance(v, list):
@@ -307,6 +338,8 @@ def objectify(data: dict[str, Any] | list[Any]) -> dict[str, Any] | list[Any]:
                         new_value.append(objectify(item))
                     else:
                         new_value.append(item)
+
+                data[k] = new_value
 
     elif isinstance(data, list):
         new_data = []
@@ -329,3 +362,16 @@ def sync_tables():
     management.sync_table(RecoveryCode)
     management.sync_table(Relationship)
     management.sync_table(Activity)
+    management.sync_table(Channel)
+    management.sync_table(Recipient)
+    management.sync_table(DMChannel)
+    management.sync_table(GroupDMChannel)
+    management.sync_table(CategoryChannel)
+    management.sync_table(TextChannel)
+    management.sync_table(Guild)
+    management.sync_table(Feature)
+    management.sync_table(Role)
+    management.sync_table(Member)
+    management.sync_table(MemberRole)
+    management.sync_table(Ban)
+    management.sync_table(GatewaySessionLimit)

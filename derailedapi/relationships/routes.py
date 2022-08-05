@@ -51,7 +51,7 @@ def didnt_pass_max_relationships(user: User, target: User):
         Relationship.target_id == user.id
     ).count()
 
-    if user_main_relationships + user_targeted_relationships == 1000:
+    if user_main_relationships + user_targeted_relationships == 5000:
         raise HTTPError(400, 'You have reached your maximum relationship limit')
 
     target_main_relationships: int = Relationship.objects(
@@ -61,7 +61,7 @@ def didnt_pass_max_relationships(user: User, target: User):
         Relationship.target_id == target.id
     ).count()
 
-    if target_main_relationships + target_targeted_relationships == 1000:
+    if target_main_relationships + target_targeted_relationships == 5000:
         raise HTTPError(400, 'Target user has reached their maximum relationship limit')
 
 
@@ -144,7 +144,7 @@ def create_relationship(json: MakeRelationshipData, headers: AuthorizationObject
 @relationships.output(EmptySchema, 204)
 @relationships.doc(tag='Relationships')
 def modify_relationship(json: ModifyRelationshipData, headers: AuthorizationObject):
-    peer = authorize(headers['authorization'], 'id')
+    peer = authorize(headers['authorization'], ['id'])
 
     try:
         target: User = User.objects(User.id == json['user_id']).get()
@@ -176,7 +176,7 @@ def modify_relationship(json: ModifyRelationshipData, headers: AuthorizationObje
 @relationships.output(EmptySchema, 204)
 @relationships.doc(tag='Relationships')
 def remove_relationship(user_id: int, headers: AuthorizationObject):
-    peer = authorize(headers['authorization'], 'id')
+    peer = authorize(headers['authorization'], ['id'])
 
     try:
         target: User = User.objects(User.id == user_id).get()
@@ -227,7 +227,7 @@ def easily_productionify_relationship(relationship: Relationship) -> dict[Any, A
 @relationships.output(RelationshipData(many=True), description='Your relationships')
 @relationships.doc(tag='Relationships')
 def get_relationships(headers: AuthorizationObject):
-    me = authorize(headers['authorization'], 'id')
+    me = authorize(headers['authorization'], ['id'])
     relationships: list[Relationship] = Relationship.objects(
         Relationship.user_id == me.id
     ).all()
