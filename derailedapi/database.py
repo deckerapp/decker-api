@@ -26,7 +26,13 @@ from cassandra.cqlengine import columns, connection, management, models
 from cassandra.io import asyncorereactor, geventreactor
 
 from derailedapi.enforgement import forger
-from derailedapi.enums import ContentFilterLevel, MFALevel, NotificationLevel, NSFWLevel, VerificationLevel
+from derailedapi.enums import (
+    ContentFilterLevel,
+    MFALevel,
+    NotificationLevel,
+    NSFWLevel,
+    VerificationLevel,
+)
 
 auth_provider = PlainTextAuthProvider(
     os.getenv('SCYLLA_USER'), os.getenv('SCYLLA_PASSWORD')

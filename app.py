@@ -17,10 +17,10 @@ from apiflask import APIFlask
 from dotenv import load_dotenv
 
 from derailedapi import ratelimiter
+from derailedapi.guilds.routes import guilds
 from derailedapi.json import ORJSONDecoder, ORJSONEncoder
 from derailedapi.relationships.routes import relationships
 from derailedapi.users.routes import registerr, users
-from derailedapi.guilds.routes import guilds
 
 load_dotenv()
 

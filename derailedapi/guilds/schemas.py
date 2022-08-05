@@ -16,9 +16,10 @@ limitations under the License.
 from typing import Literal, TypedDict
 
 from apiflask import Schema
-from apiflask.fields import Boolean, DateTime, Integer, List, Nested, String, Field
+from apiflask.fields import Boolean, DateTime, Field, Integer, List, Nested, String
 from apiflask.validators import Length, OneOf
 from typing_extensions import NotRequired
+
 
 class CreateGuild(Schema):
     name = String(
