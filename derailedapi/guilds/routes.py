@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from datetime import datetime, timezone
+
 from apiflask import APIBlueprint, HTTPError
 
 from derailedapi.database import (
@@ -46,7 +48,11 @@ def create_member(
     user_id: int, guild_id: int, pending: bool = False, owner: bool = False
 ) -> Member:
     return Member.create(
-        user_id=user_id, guild_id=guild_id, pending=pending, owner=owner
+        user_id=user_id,
+        guild_id=guild_id,
+        pending=pending,
+        owner=owner,
+        joined_at=datetime.now(timezone.utc),
     )
 
 
