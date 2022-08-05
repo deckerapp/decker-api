@@ -21,10 +21,12 @@ from apiflask import APIBlueprint, HTTPError
 from twattle.database import (
     CategoryChannel,
     Channel,
+    Event,
     Guild,
     Member,
     Settings,
     TextChannel,
+    dispatch_event,
     objectify,
 )
 from twattle.enums import ChannelType, PermissionBooler
@@ -105,6 +107,8 @@ def create_guild(json: CreateGuildObject, headers: AuthorizationObject):
     )
 
     # TODO: Send Join Message in #general
+
+    dispatch_event('guilds', Event('GUILD_CREATE', dict(guild), user_id=user.id))
 
     return objectify(
         {

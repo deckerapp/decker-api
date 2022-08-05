@@ -1,5 +1,9 @@
+from dotenv import load_dotenv
+
 from twattle.database import connect, sync_tables
 from twattle.users import routes
+
+load_dotenv()
 
 connect()
 sync_tables()

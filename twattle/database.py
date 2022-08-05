@@ -24,6 +24,7 @@ from apiflask import HTTPError
 from cassandra.auth import PlainTextAuthProvider
 from cassandra.cqlengine import columns, connection, management, models
 from cassandra.io import asyncorereactor, geventreactor
+from kafka import KafkaProducer
 
 from twattle.enforgement import forger
 from twattle.enums import (
@@ -40,8 +41,8 @@ auth_provider = PlainTextAuthProvider(
 T = TypeVar('T', dict[str, Any], list[Any])
 
 
-def get_hosts():
-    hs = os.getenv('SCYLLA_HOSTS')
+def get_hosts(name: str):
+    hs = os.getenv(name)
 
     return None if hs is None else hs.split(',')
 
@@ -54,7 +55,7 @@ def connect():
     )
 
     connection.setup(
-        get_hosts(),
+        get_hosts('SCYLLA_HOSTS'),
         'derailed',
         auth_provider=auth_provider,
         connect_timeout=100,
@@ -62,13 +63,22 @@ def connect():
         connection_class=connection_class,
     )
 
+    global producer
+
+    producer = KafkaProducer(bootstrap_servers=get_hosts('KAFKA_HOSTS'))
+
 
 class Event(msgspec.Struct):
     name: str
     data: dict
     guild_id: int | None = None
+    guild_ids: list[int] | None = None
     user_id: int | None = None
     user_ids: list[int] | None = None
+
+
+def dispatch_event(topic: str, event: Event) -> None:
+    producer.send(topic, msgspec.msgpack.encode(event))
 
 
 class User(models.Model):

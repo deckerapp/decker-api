@@ -18,7 +18,7 @@ from typing import Any
 from apiflask import APIBlueprint, HTTPError
 from apiflask.schemas import EmptySchema
 
-from ..database import Relationship, Settings, User, objectify
+from ..database import Event, Relationship, Settings, User, dispatch_event, objectify
 from ..enums import Relation
 from ..users.routes import authorize
 from ..users.schemas import Authorization, AuthorizationObject
@@ -132,10 +132,13 @@ def create_relationship(json: MakeRelationshipData, headers: AuthorizationObject
                 raise HTTPError(400, 'This user is friended')
 
             peer_relation.update(type=Relation.BLOCKED)
+            dispatch_event('relationships', Event('RELATIONSHIP_UPDATE', {'relator': peer.id, 'type': Relation.BLOCKED}, user_id=target.id))
 
     # TODO: Send these as events
     Relationship.create(user_id=peer.id, target_id=target.id, type=Relation.OUTGOING)
     Relationship.create(user_id=target.id, target_id=peer.id, type=Relation.INCOMING)
+
+    dispatch_event('relationships', Event('RELATIONSHIP_CREATE', {'type': Relation.INCOMING, 'relator': peer.id}, user_id=target.id))
 
 
 @relationships.patch('/users/@me/relationships')
@@ -165,6 +168,9 @@ def modify_relationship(json: ModifyRelationshipData, headers: AuthorizationObje
 
         target_relationship.update(type=Relation.FRIEND)
         peer_relationship.update(type=Relation.FRIEND)
+
+        dispatch_event('relationships', Event('RELATIONSHIP_UPDATE', {'type': Relation.FRIEND, 'relator': target.id}, user_id=peer.id))
+        dispatch_event('relationships', Event('RELATIONSHIP_UPDATE', {'type': Relation.FRIEND, 'relator': peer.id}, user_id=target.id))
     else:
         raise HTTPError(400, 'You cannot modify this type of relationship')
 
@@ -191,6 +197,7 @@ def remove_relationship(user_id: int, headers: AuthorizationObject):
         raise HTTPError(400, 'You don\'t have a relationship with this user')
     else:
         peer_relation.delete()
+        dispatch_event('relationships', Event('RELATIONSHIP_REMOVE', {'relator': target.id, 'remover': True}))
 
     try:
         target_relationship: Relationship = Relationship.objects(
@@ -202,6 +209,7 @@ def remove_relationship(user_id: int, headers: AuthorizationObject):
     else:
         if target_relationship.type != Relation.BLOCKED:
             target_relationship.delete()
+            dispatch_event('relationships', Event('RELATIONSHIP_REMOVE', {'relator': peer.id, 'remover': False}))
 
     return ''
 

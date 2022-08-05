@@ -21,12 +21,14 @@ from apiflask import APIBlueprint, HTTPError
 from argon2 import PasswordHasher, exceptions
 
 from ..database import (
+    Event,
     GatewaySessionLimit,
     Member,
     RecoveryCode,
     Settings,
     User,
     create_token,
+    dispatch_event,
     objectify,
     verify_token,
 )
@@ -107,7 +109,7 @@ def authorize(
     fields: list[str] | None = None,
     rm_fields: list[str] | str | None = None,
 ) -> User:
-    return verify_token(token=token, fields=fields)
+    return verify_token(token=token, fields=fields, rm_fields=rm_fields)
 
 
 def verify_mfa(user_id: int, code: int | str | None) -> None:
@@ -238,6 +240,13 @@ def edit_me(json: EditUserObject, headers: AuthorizationObject):
 
     if password:
         query['password'] = hasher.hash(password=password)
+
+        dispatch_event(
+            'security',
+            Event(
+                'USER_INTERNAL_DISCONNECT', {'type': 'password-change'}, user_id=user.id
+            ),
+        )
 
     update = user.update(**query)
     ret = dict(update)
