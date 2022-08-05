@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 
 from apiflask import APIBlueprint, HTTPError
 
-from derailedapi.database import (
+from twattle.database import (
     CategoryChannel,
     Channel,
     Guild,
@@ -27,9 +27,9 @@ from derailedapi.database import (
     TextChannel,
     objectify,
 )
-from derailedapi.enums import ChannelType, PermissionBooler
-from derailedapi.users.routes import authorize
-from derailedapi.users.schemas import Authorization, AuthorizationObject
+from twattle.enums import ChannelType, PermissionBooler
+from twattle.users.routes import authorize
+from twattle.users.schemas import Authorization, AuthorizationObject
 
 from ..enforgement import forger
 from .schemas import CreatedGuild, CreateGuild, CreateGuildObject

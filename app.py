@@ -16,15 +16,15 @@ limitations under the License.
 from apiflask import APIFlask
 from dotenv import load_dotenv
 
-from derailedapi import ratelimiter
-from derailedapi.guilds.routes import guilds
-from derailedapi.json import ORJSONDecoder, ORJSONEncoder
-from derailedapi.relationships.routes import relationships
-from derailedapi.users.routes import registerr, users
+from twattle import ratelimiter
+from twattle.guilds.routes import guilds
+from twattle.json import ORJSONDecoder, ORJSONEncoder
+from twattle.relationships.routes import relationships
+from twattle.users.routes import registerr, users
 
 load_dotenv()
 
-from derailedapi.database import connect, sync_tables
+from twattle.database import connect, sync_tables
 
 connect()
 sync_tables()

@@ -34,7 +34,7 @@ def key_func():
 
 limiter = Limiter(
     key_func=key_func,
-    key_prefix='derailed_limiting',
+    key_prefix='twattle_brute',
     headers_enabled=True,
     strategy='fixed-window-elastic-expiry',
     storage_uri=os.getenv('STORAGE_URI'),

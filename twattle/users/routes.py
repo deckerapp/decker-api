@@ -46,7 +46,7 @@ from .schemas import (
 )
 
 users = APIBlueprint('users', __name__)
-registerr = APIBlueprint('register', 'derailedapi.register')
+registerr = APIBlueprint('register', 'twattle.register')
 hasher = PasswordHasher()
 
 

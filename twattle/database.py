@@ -25,8 +25,8 @@ from cassandra.auth import PlainTextAuthProvider
 from cassandra.cqlengine import columns, connection, management, models
 from cassandra.io import asyncorereactor, geventreactor
 
-from derailedapi.enforgement import forger
-from derailedapi.enums import (
+from twattle.enforgement import forger
+from twattle.enums import (
     ContentFilterLevel,
     MFALevel,
     NotificationLevel,

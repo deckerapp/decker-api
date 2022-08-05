@@ -1,5 +1,5 @@
-from derailedapi.database import connect, sync_tables
-from derailedapi.users import routes
+from twattle.database import connect, sync_tables
+from twattle.users import routes
 
 connect()
 sync_tables()

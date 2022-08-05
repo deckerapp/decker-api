@@ -30,8 +30,8 @@ limitations under the License.
 # ⠀⠀⠀⠀⠀⠀⠀⠹⣿⣿⣿⣿⣦⣤⣤⣤⣤⣾⣿⣿⣿⣿⣿⣿⣿⣿⡟⠀⠀⠀
 # ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠻⢿⣿⣿⣿⣿⣿⣿⠿⠋⠉⠛⠋⠉⠉⠁⠀⠀⠀⠀
 # ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠉⠉⠁
-# https://github.com/derailed-archive/api/blob/master/run.py#L1-L16
-# https://github.com/derailed-archive/venera/blob/canary/run.py#L1-L16
+# https://github.com/twattle-archive/api/blob/master/run.py#L1-L16
+# https://github.com/twattle-archive/venera/blob/canary/run.py#L1-L16
 # https://github.com/concordchat/concord-api/blob/canary/run.py#L1-L16
 
 import os
