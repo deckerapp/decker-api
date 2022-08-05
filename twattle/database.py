@@ -1,5 +1,5 @@
 """
-Copyright 2021-2022 Derailed.
+Copyright 2021-2022 twattle, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -279,7 +279,40 @@ class GatewaySessionLimit(models.Model):
     max_concurrency: int = columns.Integer(default=16)
 
 
+class Message(models.Model):
+    __table_name__ = 'messages'
+    id: int = columns.BigInt(
+        primary_key=True, partition_key=False, clustering_order='DESC'
+    )
+    channel_id: int = columns.BigInt(primary_key=True, partition_key=True)
+    bucket: int = columns.Integer(primary_key=True, partition_key=True)
+    author_id: int = columns.BigInt()
+    content: str = columns.Text()
+    created_timestamp: str = columns.DateTime()
+    edited_timestamp: str = columns.DateTime()
+    tts: bool = columns.Boolean(default=False)
+    mention_everyone: bool = columns.Boolean()
+    pinned: bool = columns.Boolean(default=False)
+    type: int = columns.Integer()
+    flags: int = columns.Integer()
+    referenced_message_id: int = columns.BigInt(primary_key=True)
+
+
+# TODO: Reactions, Attachments & Embeds
+class MentionedUser(models.Model):
+    __table_name__ = 'mentioned_users'
+    message_id: int = columns.BigInt(primary_key=True)
+    user_id: int = columns.BigInt(index=True)
+
+
+class MentionedRole(models.Model):
+    __table_name__ = 'mentioned_roles'
+    message_id: int = columns.BigInt(primary_key=True)
+    role_id: int = columns.BigInt(primary_key=True)
+
+
 def create_token(user_id: int, user_password: str) -> str:
+    # sourcery skip: instance-method-first-arg-name
     signer = itsdangerous.TimestampSigner(user_password)
     user_id = str(user_id)
     user_id = base64.b64encode(user_id.encode())

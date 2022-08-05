@@ -1,5 +1,5 @@
 """
-Copyright 2021-2022 Derailed.
+Copyright 2021-2022 twattle, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ from apiflask import Schema
 from apiflask.fields import Boolean, DateTime, Field, Integer, List, Nested, String
 from apiflask.validators import Length, OneOf
 from typing_extensions import NotRequired
+
+from twattle.users.schemas import PublicUserObject
 
 
 class CreateGuild(Schema):
@@ -88,9 +90,9 @@ class TextChannel(GuildChannel):
     last_message_id = String()
 
 
-class Owner(Schema):
+class Member(Schema):
     guild_id = String()
-    user_id = Integer()
+    user: Nested(PublicUserObject)
     nick = String()
     avatar = String()
     joined_at = DateTime('iso')
@@ -99,10 +101,3 @@ class Owner(Schema):
     pending: bool = Boolean()
     communication_disabled_until: str = DateTime('iso')
     owner: bool = Boolean()
-
-
-class CreatedGuild(Schema):
-    guild = Nested(FullGuild)
-    categories = List(Nested(GuildChannel))
-    channels = List(Nested(TextChannel))
-    owner = Nested(Owner)

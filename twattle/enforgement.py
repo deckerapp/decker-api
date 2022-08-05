@@ -1,5 +1,5 @@
 """
-Copyright 2021-2022 Derailed.
+Copyright 2021-2022 twattle, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ class SnowflakeFactory:
     def __init__(self) -> None:
         self._epoch: int = 1641042000000
         self._incrementation = 0
-        self._bucket_size = 1000 * 60 * 60 * 24 * 4
+        self._bucket_size = 1000 * 60 * 60 * 24 * 10
 
     def forge(self) -> int:
         current_ms = int(time.time() * 1000)

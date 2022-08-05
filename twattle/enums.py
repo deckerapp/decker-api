@@ -1,5 +1,5 @@
 """
-Copyright 2021-2022 Derailed.
+Copyright 2021-2022 twattle, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -71,6 +71,11 @@ class NSFWLevel:
 class MFALevel:
     NONE = 0
     ELEVATED = 1
+
+
+class MessageType:
+    NORMAL = 0
+    JOIN = 1
 
 
 class Permission:

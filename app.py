@@ -1,5 +1,5 @@
 """
-Copyright 2021-2022 Derailed.
+Copyright 2021-2022 twattle, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ sync_tables()
 
 app = APIFlask(
     __name__,
-    title='Derailed API',
+    title='Twattle API',
     version='v1',
     spec_path='/__development/developer-kelp.open.json',
     docs_path='/__development/developer_ke-lp-dash.board',
@@ -40,7 +40,7 @@ app = APIFlask(
 
 ratelimiter.limiter.init_app(app=app)
 app.config['INFO'] = {
-    'description': 'The API for Derailed.',
+    'description': 'The API for Twattle.',
     'termsOfService': 'https://derailed.one/terms',
     'contact': {'name': 'Support', 'email': 'support@derailed.one'},
     'license': {

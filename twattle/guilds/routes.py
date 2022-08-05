@@ -1,5 +1,5 @@
 """
-Copyright 2021-2022 Derailed.
+Copyright 2021-2022 twattle, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,17 +24,18 @@ from twattle.database import (
     Event,
     Guild,
     Member,
+    Message,
     Settings,
     TextChannel,
     dispatch_event,
     objectify,
 )
-from twattle.enums import ChannelType, PermissionBooler
+from twattle.enums import ChannelType, MessageType, PermissionBooler
 from twattle.users.routes import authorize
 from twattle.users.schemas import Authorization, AuthorizationObject
 
 from ..enforgement import forger
-from .schemas import CreatedGuild, CreateGuild, CreateGuildObject
+from .schemas import CreateGuild, CreateGuildObject, FullGuild
 
 guilds = APIBlueprint('guilds', __name__)
 
@@ -62,10 +63,39 @@ def create_channel(name: str | None, type: int) -> Channel:
     return Channel.create(id=forger.forge(), name=name, type=type)
 
 
+def create_message(
+    channel_id: int,
+    content: str,
+    author_id: int,
+    tts: bool = False,
+    mention_everyone: bool = False,
+    type: int = MessageType.NORMAL,
+    flags: int = 0,
+    referenced_message_id: int | None = None,
+) -> Message:
+    message_id = forger.forge()
+
+    return Message.create(
+        id=message_id,
+        channel_id=channel_id,
+        bucket=forger.make_bucket(message_id),
+        author_id=author_id,
+        content=content,
+        created_timestamp=datetime.now(timezone.utc),
+        edited_timestamp=datetime.now(timezone.utc),
+        tts=tts,
+        mention_everyone=mention_everyone,
+        pinned=False,
+        type=type,
+        flags=flags,
+        referenced_message_id=referenced_message_id,
+    )
+
+
 @guilds.post('/guilds')
 @guilds.input(CreateGuild)
 @guilds.input(Authorization, 'headers')
-@guilds.output(CreatedGuild)
+@guilds.output(FullGuild)
 @guilds.doc(tag='Guilds')
 def create_guild(json: CreateGuildObject, headers: AuthorizationObject):
     user = authorize(headers['authorization'], ['id', 'bot'])
@@ -91,30 +121,33 @@ def create_guild(json: CreateGuildObject, headers: AuthorizationObject):
         system_channel_id=forger.forge(),
         system_channel_flags=1,
     )
-    soul = create_member(user_id=user.id, guild_id=guild.id, owner=True)
+    member = create_member(user_id=user.id, guild_id=guild.id, owner=True)
 
     # create essential channels
     es_tcs = create_channel('Text Channels', ChannelType.CATEGORY)
 
-    text_channels: CategoryChannel = CategoryChannel.create(
-        channel_id=es_tcs.id, guild_id=guild.id, position=1
-    )
+    m1 = CategoryChannel.create(channel_id=es_tcs.id, guild_id=guild.id, position=1)
 
     es_general = create_channel('general', ChannelType.TEXT)
 
-    general: TextChannel = TextChannel.create(
+    m2 = TextChannel.create(
         channel_id=es_general.id, guild_id=guild.id, position=1, parent_id=es_tcs.id
     )
 
-    # TODO: Send Join Message in #general
+    merged_category = dict(es_tcs) | m1
+    merged_text_channel = dict(es_general) | m2
 
-    dispatch_event('guilds', Event('GUILD_CREATE', dict(guild), user_id=user.id))
-
-    return objectify(
-        {
-            'guild': dict(guild),
-            'categories': [dict(text_channels)],
-            'channels': [dict(general)],
-            'owner': dict(soul),
-        }
+    message = create_message(
+        channel_id=es_general.id,
+        content=f'<@{user.id}>',
+        author_id=user.id,
+        type=MessageType.JOIN,
     )
+
+    dispatch_event('guilds', Event('GUILD_CREATE', objectify(dict(guild)), user_id=user.id))
+    dispatch_event('channels', Event('CHANNEL_CREATE', objectify(merged_category), user_id=user.id))
+    dispatch_event('channels', Event('CHANNEL_CREATE', objectify(merged_text_channel), user_id=user.id))
+    dispatch_event('members', Event('MEMBER_JOIN', objectify(dict(member)), user_id=user.id))
+    dispatch_event('messages', Event('MESSAGE_CREATE', objectify(dict(message)), user_id=user.id))
+
+    return objectify(dict(guild))
