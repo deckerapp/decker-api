@@ -1,17 +1,9 @@
 """
-Copyright 2021-2022 Derailed.
+Elastic License 2.0
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+Copyright Clack and/or licensed to Clack under one
+or more contributor license agreements. Licensed under the Elastic License;
+you may not use this file except in compliance with the Elastic License.
 """
 import os
 import threading
@@ -22,7 +14,7 @@ class SnowflakeFactory:
     def __init__(self) -> None:
         self._epoch: int = 1641042000000
         self._incrementation = 0
-        self._bucket_size = 1000 * 60 * 60 * 24 * 4
+        self._bucket_size = 1000 * 60 * 60 * 24 * 10
 
     def forge(self) -> int:
         current_ms = int(time.time() * 1000)

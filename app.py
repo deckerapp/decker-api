@@ -1,45 +1,38 @@
 """
-Copyright 2021-2022 Derailed.
+Elastic License 2.0
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+Copyright Clack and/or licensed to Clack under one
+or more contributor license agreements. Licensed under the Elastic License;
+you may not use this file except in compliance with the Elastic License.
 """
 from apiflask import APIFlask
 from dotenv import load_dotenv
 
-from derailedapi import ratelimiter
-from derailedapi.json import ORJSONDecoder, ORJSONEncoder
-from derailedapi.relationships.routes import relationships
-from derailedapi.users.routes import registerr, users
+from clack import ratelimiter
+from clack.guilds.routes import guilds
+from clack.json import ORJSONDecoder, ORJSONEncoder
+from clack.relationships.routes import relationships
+from clack.users.routes import registerr, users
 
 load_dotenv()
 
-from derailedapi.database import connect, sync_tables
+from clack.database import connect, sync_tables
 
 connect()
 sync_tables()
 
 app = APIFlask(
     __name__,
-    title='Derailed API',
-    version='v0',
-    spec_path='/openapi.json',
+    title='Clack API',
+    version='v1',
+    spec_path='/__development/developer-kelp.open.json',
+    docs_path='/__development/developer_ke-lp-dash.board',
     docs_ui='elements',
-    docs_path='/',
 )
 
 ratelimiter.limiter.init_app(app=app)
 app.config['INFO'] = {
-    'description': 'The API for Derailed.',
+    'description': 'The API for Clack.',
     'termsOfService': 'https://derailed.one/terms',
     'contact': {'name': 'Support', 'email': 'support@derailed.one'},
     'license': {
@@ -47,10 +40,7 @@ app.config['INFO'] = {
         'url': 'https://www.apache.org/licenses/LICENSE-2.0',
     },
 }
-app.config['SERVERS'] = [
-    {'name': 'Production', 'url': 'https://derailed.one/api'},
-]
-app.tags = ['Users', 'Relationships']
+app.tags = ['Users', 'Relationships', 'Guilds']
 app.json_encoder = ORJSONEncoder
 app.json_decoder = ORJSONDecoder
 
@@ -59,6 +49,7 @@ app.json_decoder = ORJSONDecoder
 app.register_blueprint(registerr)
 app.register_blueprint(users)
 app.register_blueprint(relationships)
+app.register_blueprint(guilds)
 ratelimiter.limiter.limit('2/hour')(registerr)
 
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-sudo docker build -t derailed-api .
-sudo docker stop derailed-api
-sudo docker rm -v derailed-api
-sudo docker run --name derailed-api -p 5000:5000 -d derailed-api
+sudo docker build -t clack-api .
+sudo docker stop clack-api
+sudo docker rm -v clack-api
+sudo docker run --name clack-api -p 5000:5000 -d clack-api

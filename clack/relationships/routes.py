@@ -1,24 +1,16 @@
 """
-Copyright 2021-2022 Derailed.
+Elastic License 2.0
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+Copyright Clack and/or licensed to Clack under one
+or more contributor license agreements. Licensed under the Elastic License;
+you may not use this file except in compliance with the Elastic License.
 """
 from typing import Any
 
 from apiflask import APIBlueprint, HTTPError
 from apiflask.schemas import EmptySchema
 
-from ..database import Relationship, Settings, User
+from ..database import Event, Relationship, Settings, User, dispatch_event, objectify
 from ..enums import Relation
 from ..users.routes import authorize
 from ..users.schemas import Authorization, AuthorizationObject
@@ -51,7 +43,7 @@ def didnt_pass_max_relationships(user: User, target: User):
         Relationship.target_id == user.id
     ).count()
 
-    if user_main_relationships + user_targeted_relationships == 1000:
+    if user_main_relationships + user_targeted_relationships == 5000:
         raise HTTPError(400, 'You have reached your maximum relationship limit')
 
     target_main_relationships: int = Relationship.objects(
@@ -61,7 +53,7 @@ def didnt_pass_max_relationships(user: User, target: User):
         Relationship.target_id == target.id
     ).count()
 
-    if target_main_relationships + target_targeted_relationships == 1000:
+    if target_main_relationships + target_targeted_relationships == 5000:
         raise HTTPError(400, 'Target user has reached their maximum relationship limit')
 
 
@@ -132,10 +124,27 @@ def create_relationship(json: MakeRelationshipData, headers: AuthorizationObject
                 raise HTTPError(400, 'This user is friended')
 
             peer_relation.update(type=Relation.BLOCKED)
+            dispatch_event(
+                'relationships',
+                Event(
+                    'RELATIONSHIP_UPDATE',
+                    {'relator': peer.id, 'type': Relation.BLOCKED},
+                    user_id=target.id,
+                ),
+            )
 
     # TODO: Send these as events
     Relationship.create(user_id=peer.id, target_id=target.id, type=Relation.OUTGOING)
     Relationship.create(user_id=target.id, target_id=peer.id, type=Relation.INCOMING)
+
+    dispatch_event(
+        'relationships',
+        Event(
+            'RELATIONSHIP_CREATE',
+            {'type': Relation.INCOMING, 'relator': peer.id},
+            user_id=target.id,
+        ),
+    )
 
 
 @relationships.patch('/users/@me/relationships')
@@ -144,7 +153,7 @@ def create_relationship(json: MakeRelationshipData, headers: AuthorizationObject
 @relationships.output(EmptySchema, 204)
 @relationships.doc(tag='Relationships')
 def modify_relationship(json: ModifyRelationshipData, headers: AuthorizationObject):
-    peer = authorize(headers['authorization'])
+    peer = authorize(headers['authorization'], ['id'])
 
     try:
         target: User = User.objects(User.id == json['user_id']).get()
@@ -165,6 +174,23 @@ def modify_relationship(json: ModifyRelationshipData, headers: AuthorizationObje
 
         target_relationship.update(type=Relation.FRIEND)
         peer_relationship.update(type=Relation.FRIEND)
+
+        dispatch_event(
+            'relationships',
+            Event(
+                'RELATIONSHIP_UPDATE',
+                {'type': Relation.FRIEND, 'relator': target.id},
+                user_id=peer.id,
+            ),
+        )
+        dispatch_event(
+            'relationships',
+            Event(
+                'RELATIONSHIP_UPDATE',
+                {'type': Relation.FRIEND, 'relator': peer.id},
+                user_id=target.id,
+            ),
+        )
     else:
         raise HTTPError(400, 'You cannot modify this type of relationship')
 
@@ -176,7 +202,7 @@ def modify_relationship(json: ModifyRelationshipData, headers: AuthorizationObje
 @relationships.output(EmptySchema, 204)
 @relationships.doc(tag='Relationships')
 def remove_relationship(user_id: int, headers: AuthorizationObject):
-    peer = authorize(headers['authorization'])
+    peer = authorize(headers['authorization'], ['id'])
 
     try:
         target: User = User.objects(User.id == user_id).get()
@@ -191,6 +217,10 @@ def remove_relationship(user_id: int, headers: AuthorizationObject):
         raise HTTPError(400, 'You don\'t have a relationship with this user')
     else:
         peer_relation.delete()
+        dispatch_event(
+            'relationships',
+            Event('RELATIONSHIP_REMOVE', {'relator': target.id, 'remover': True}),
+        )
 
     try:
         target_relationship: Relationship = Relationship.objects(
@@ -202,13 +232,15 @@ def remove_relationship(user_id: int, headers: AuthorizationObject):
     else:
         if target_relationship.type != Relation.BLOCKED:
             target_relationship.delete()
+            dispatch_event(
+                'relationships',
+                Event('RELATIONSHIP_REMOVE', {'relator': peer.id, 'remover': False}),
+            )
 
     return ''
 
 
-def easily_productionify_relationship(
-    relationship: Relationship
-) -> dict[Any, Any]:
+def easily_productionify_relationship(relationship: Relationship) -> dict[Any, Any]:
     ret = dict(relationship)
 
     ret.pop('user_id')
@@ -229,12 +261,11 @@ def easily_productionify_relationship(
 @relationships.output(RelationshipData(many=True), description='Your relationships')
 @relationships.doc(tag='Relationships')
 def get_relationships(headers: AuthorizationObject):
-    me = authorize(headers['authorization'])
+    me = authorize(headers['authorization'], ['id'])
     relationships: list[Relationship] = Relationship.objects(
         Relationship.user_id == me.id
     ).all()
 
-    return [
-        easily_productionify_relationship(relationship=pr)
-        for pr in relationships
-    ]
+    return objectify(
+        [easily_productionify_relationship(relationship=pr) for pr in relationships]
+    )
