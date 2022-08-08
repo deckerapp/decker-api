@@ -316,8 +316,16 @@ class MentionedRole(models.Model):
 class ReadState(models.Model):
     __table_name__ = 'channel_readstates'
     user_id: int = columns.BigInt(primary_key=True)
-    channel_id: int = columns.BigInt(primary_key=True)
+    channel_id: int = columns.BigInt()
     last_read_message_id: int = columns.BigInt()
+    mention_count: int = columns.Integer()
+
+
+class Presence(models.Model):
+    __table_name__ = 'presences'
+    user_id: int = columns.BigInt(primary_key=True)
+    status: str = columns.Text()
+    client_status: str = columns.Text()
 
 
 def create_token(user_id: int, user_password: str) -> str:
