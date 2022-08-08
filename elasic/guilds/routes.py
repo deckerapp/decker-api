@@ -1,7 +1,7 @@
 """
 Elastic License 2.0
 
-Copyright Clack and/or licensed to Clack under one
+Copyright Elasic and/or licensed to Elasic under one
 or more contributor license agreements. Licensed under the Elastic License;
 you may not use this file except in compliance with the Elastic License.
 """
@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 
 from apiflask import APIBlueprint, HTTPError
 
-from clack.database import (
+from elasic.database import (
     CategoryChannel,
     Channel,
     Event,
@@ -22,9 +22,9 @@ from clack.database import (
     dispatch_event,
     objectify,
 )
-from clack.enums import ChannelType, MessageType, PermissionBooler
-from clack.users.routes import authorize
-from clack.users.schemas import Authorization, AuthorizationObject
+from elasic.enums import ChannelType, MessageType, PermissionBooler
+from elasic.users.routes import authorize
+from elasic.users.schemas import Authorization, AuthorizationObject
 
 from ..enforgement import forger
 from .schemas import CreateGuild, CreateGuildObject, FullGuild

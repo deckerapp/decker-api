@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 
-from clack.database import connect, sync_tables
-from clack.users import routes
+from elasic.database import connect, sync_tables
+from elasic.users import routes
 
 load_dotenv()
 

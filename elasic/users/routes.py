@@ -1,7 +1,7 @@
 """
 Elastic License 2.0
 
-Copyright Clack and/or licensed to Clack under one
+Copyright Elasic and/or licensed to Elasic under one
 or more contributor license agreements. Licensed under the Elastic License;
 you may not use this file except in compliance with the Elastic License.
 """
@@ -41,7 +41,7 @@ from .schemas import (
 )
 
 users = APIBlueprint('users', __name__)
-registerr = APIBlueprint('register', 'clack.register')
+registerr = APIBlueprint('register', 'elasic.register')
 hasher = PasswordHasher()
 
 

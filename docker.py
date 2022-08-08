@@ -1,7 +1,7 @@
 """
 Elastic License 2.0
 
-Copyright Clack and/or licensed to Clack under one
+Copyright Elasic and/or licensed to Elasic under one
 or more contributor license agreements. Licensed under the Elastic License;
 you may not use this file except in compliance with the Elastic License.
 """
@@ -22,8 +22,8 @@ you may not use this file except in compliance with the Elastic License.
 # ⠀⠀⠀⠀⠀⠀⠀⠹⣿⣿⣿⣿⣦⣤⣤⣤⣤⣾⣿⣿⣿⣿⣿⣿⣿⣿⡟⠀⠀⠀
 # ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠻⢿⣿⣿⣿⣿⣿⣿⠿⠋⠉⠛⠋⠉⠉⠁⠀⠀⠀⠀
 # ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠉⠉⠁
-# https://github.com/clack-archive/api/blob/master/run.py#L1-L16
-# https://github.com/clack-archive/venera/blob/canary/run.py#L1-L16
+# https://github.com/elasic-archive/api/blob/master/run.py#L1-L16
+# https://github.com/elasic-archive/venera/blob/canary/run.py#L1-L16
 # https://github.com/concordchat/concord-api/blob/canary/run.py#L1-L16
 
 import os

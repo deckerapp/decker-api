@@ -1,7 +1,7 @@
 """
 Elastic License 2.0
 
-Copyright Clack and/or licensed to Clack under one
+Copyright Elasic and/or licensed to Elasic under one
 or more contributor license agreements. Licensed under the Elastic License;
 you may not use this file except in compliance with the Elastic License.
 """
@@ -19,8 +19,8 @@ from cassandra.cqlengine import columns, connection, management, models, query
 from cassandra.io import asyncorereactor, geventreactor
 from kafka import KafkaProducer
 
-from clack.enforgement import forger
-from clack.enums import (
+from elasic.enforgement import forger
+from elasic.enums import (
     ContentFilterLevel,
     MFALevel,
     NotificationLevel,
@@ -66,7 +66,7 @@ def get_trace():
     proc = os.getpid()
     thread = threading.current_thread().ident
 
-    return f'clack-api-{thread}-{proc}'
+    return f'elasic-api-{thread}-{proc}'
 
 
 class Event(msgspec.Struct):
@@ -156,7 +156,7 @@ class Channel(models.Model):
 class Recipient(models.Model):
     __table_name__ = 'recipients'
     channel_id: int = columns.BigInt(primary_key=True)
-    user_id: int = columns.BigInt()
+    user_id: int = columns.BigInt(index=True)
 
 
 class DMChannel(models.Model):
@@ -440,3 +440,8 @@ def sync_tables():
     management.sync_table(MemberRole)
     management.sync_table(Ban)
     management.sync_table(GatewaySessionLimit)
+    management.sync_table(ReadState)
+    management.sync_table(MentionedRole)
+    management.sync_table(MentionedUser)
+    management.sync_table(Presence)
+    management.sync_table(Message)

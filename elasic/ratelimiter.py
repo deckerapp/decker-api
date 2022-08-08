@@ -1,7 +1,7 @@
 """
 Elastic License 2.0
 
-Copyright Clack and/or licensed to Clack under one
+Copyright Elasic and/or licensed to Elasic under one
 or more contributor license agreements. Licensed under the Elastic License;
 you may not use this file except in compliance with the Elastic License.
 """
@@ -26,7 +26,7 @@ def key_func():
 
 limiter = Limiter(
     key_func=key_func,
-    key_prefix='clack_brute',
+    key_prefix='elasic_brute',
     headers_enabled=True,
     strategy='fixed-window-elastic-expiry',
     storage_uri=os.getenv('STORAGE_URI'),

@@ -1,26 +1,27 @@
 """
 Elastic License 2.0
 
-Copyright Clack and/or licensed to Clack under one
+Copyright Elasic and/or licensed to Elasic under one
 or more contributor license agreements. Licensed under the Elastic License;
 you may not use this file except in compliance with the Elastic License.
 """
+import logging
 import os
 
 from apiflask import APIFlask
 from dotenv import load_dotenv
 
-from clack import ratelimiter
-from clack.guilds.routes import guilds
-from clack.json import ORJSONDecoder, ORJSONEncoder
-from clack.relationships.routes import relationships
-from clack.users.routes import registerr, users
+from elasic import ratelimiter
+from elasic.guilds.routes import guilds
+from elasic.json import ORJSONDecoder, ORJSONEncoder
+from elasic.relationships.routes import relationships
+from elasic.users.routes import registerr, users
 
 load_dotenv()
 
 import sentry_sdk
 
-from clack.database import connect, sync_tables
+from elasic.database import connect, sync_tables
 
 # TODO: Test and maybe modify traces_sample_rate.
 sentry_sdk.init(dsn=os.getenv('SENTRY_DSN'), traces_sample_rate=1.0)
@@ -29,7 +30,7 @@ sync_tables()
 
 app = APIFlask(
     __name__,
-    title='Clack API',
+    title='Elasic API',
     version='v1',
     spec_path='/__development/openapi.json',
     docs_path='/__development/board',
@@ -38,7 +39,7 @@ app = APIFlask(
 
 ratelimiter.limiter.init_app(app=app)
 app.config['INFO'] = {
-    'description': 'The API for Clack.',
+    'description': 'The API for Elasic.',
     'termsOfService': 'https://derailed.one/terms',
     'contact': {'name': 'Support', 'email': 'support@derailed.one'},
     'license': {
@@ -59,5 +60,5 @@ app.register_blueprint(guilds)
 ratelimiter.limiter.limit('2/hour')(registerr)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True)
