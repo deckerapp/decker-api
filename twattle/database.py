@@ -16,6 +16,7 @@ limitations under the License.
 import base64
 import binascii
 import os
+import threading
 from typing import Any, TypeVar
 
 import itsdangerous
@@ -68,9 +69,17 @@ def connect():
     producer = KafkaProducer(bootstrap_servers=get_hosts('KAFKA_HOSTS'))
 
 
+def get_trace():
+    proc = os.getpid()
+    thread = threading.current_thread().ident
+
+    return f'derailed-api-{thread}-{proc}'
+
+
 class Event(msgspec.Struct):
     name: str
     data: dict
+    _trace: str = get_trace()
     guild_id: int | None = None
     guild_ids: list[int] | None = None
     user_id: int | None = None
@@ -309,6 +318,13 @@ class MentionedRole(models.Model):
     __table_name__ = 'mentioned_roles'
     message_id: int = columns.BigInt(primary_key=True)
     role_id: int = columns.BigInt(primary_key=True)
+
+
+class ReadState(models.Model):
+    __table_name__ = 'channel_readstates'
+    user_id: int = columns.BigInt(primary_key=True)
+    channel_id: int = columns.BigInt(primary_key=True)
+    last_read_message_id: int = columns.BigInt()
 
 
 def create_token(user_id: int, user_password: str) -> str:
