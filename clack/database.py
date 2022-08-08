@@ -139,7 +139,6 @@ class Relationship(models.Model):
 class Activity(models.Model):
     __table_name__ = 'activities'
     user_id: int = columns.BigInt(primary_key=True)
-    guild_id: int = columns.BigInt()
     type: int = columns.Integer(default=0)
     created_at: str = columns.DateTime()
     content: str = columns.Text()
