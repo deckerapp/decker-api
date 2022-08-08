@@ -1,37 +1,29 @@
 """
-Copyright 2021-2022 twattle, Inc.
+Elastic License 2.0
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+Copyright Clack and/or licensed to Clack under one
+or more contributor license agreements. Licensed under the Elastic License;
+you may not use this file except in compliance with the Elastic License.
 """
 from apiflask import APIFlask
 from dotenv import load_dotenv
 
-from twattle import ratelimiter
-from twattle.guilds.routes import guilds
-from twattle.json import ORJSONDecoder, ORJSONEncoder
-from twattle.relationships.routes import relationships
-from twattle.users.routes import registerr, users
+from clack import ratelimiter
+from clack.guilds.routes import guilds
+from clack.json import ORJSONDecoder, ORJSONEncoder
+from clack.relationships.routes import relationships
+from clack.users.routes import registerr, users
 
 load_dotenv()
 
-from twattle.database import connect, sync_tables
+from clack.database import connect, sync_tables
 
 connect()
 sync_tables()
 
 app = APIFlask(
     __name__,
-    title='Twattle API',
+    title='Clack API',
     version='v1',
     spec_path='/__development/developer-kelp.open.json',
     docs_path='/__development/developer_ke-lp-dash.board',
@@ -40,7 +32,7 @@ app = APIFlask(
 
 ratelimiter.limiter.init_app(app=app)
 app.config['INFO'] = {
-    'description': 'The API for Twattle.',
+    'description': 'The API for Clack.',
     'termsOfService': 'https://derailed.one/terms',
     'contact': {'name': 'Support', 'email': 'support@derailed.one'},
     'license': {

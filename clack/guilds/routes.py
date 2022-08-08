@@ -1,24 +1,16 @@
 """
-Copyright 2021-2022 twattle, Inc.
+Elastic License 2.0
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+Copyright Clack and/or licensed to Clack under one
+or more contributor license agreements. Licensed under the Elastic License;
+you may not use this file except in compliance with the Elastic License.
 """
 
 from datetime import datetime, timezone
 
 from apiflask import APIBlueprint, HTTPError
 
-from twattle.database import (
+from clack.database import (
     CategoryChannel,
     Channel,
     Event,
@@ -30,9 +22,9 @@ from twattle.database import (
     dispatch_event,
     objectify,
 )
-from twattle.enums import ChannelType, MessageType, PermissionBooler
-from twattle.users.routes import authorize
-from twattle.users.schemas import Authorization, AuthorizationObject
+from clack.enums import ChannelType, MessageType, PermissionBooler
+from clack.users.routes import authorize
+from clack.users.schemas import Authorization, AuthorizationObject
 
 from ..enforgement import forger
 from .schemas import CreateGuild, CreateGuildObject, FullGuild

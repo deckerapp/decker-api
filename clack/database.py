@@ -1,17 +1,9 @@
 """
-Copyright 2021-2022 twattle, Inc.
+Elastic License 2.0
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+Copyright Clack and/or licensed to Clack under one
+or more contributor license agreements. Licensed under the Elastic License;
+you may not use this file except in compliance with the Elastic License.
 """
 import base64
 import binascii
@@ -27,8 +19,8 @@ from cassandra.cqlengine import columns, connection, management, models
 from cassandra.io import asyncorereactor, geventreactor
 from kafka import KafkaProducer
 
-from twattle.enforgement import forger
-from twattle.enums import (
+from clack.enforgement import forger
+from clack.enums import (
     ContentFilterLevel,
     MFALevel,
     NotificationLevel,
@@ -73,7 +65,7 @@ def get_trace():
     proc = os.getpid()
     thread = threading.current_thread().ident
 
-    return f'derailed-api-{thread}-{proc}'
+    return f'clack-api-{thread}-{proc}'
 
 
 class Event(msgspec.Struct):
