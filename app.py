@@ -31,8 +31,8 @@ app = APIFlask(
     __name__,
     title='Clack API',
     version='v1',
-    spec_path='/__development/developer-kelp.open.json',
-    docs_path='/__development/developer_ke-lp-dash.board',
+    spec_path='/__development/openapi.json',
+    docs_path='/__development/board',
     docs_ui='elements',
 )
 
@@ -42,8 +42,8 @@ app.config['INFO'] = {
     'termsOfService': 'https://derailed.one/terms',
     'contact': {'name': 'Support', 'email': 'support@derailed.one'},
     'license': {
-        'name': 'Apache-2.0',
-        'url': 'https://www.apache.org/licenses/LICENSE-2.0',
+        'name': 'ELv2',
+        'url': 'https://www.elastic.co/licensing/elastic-license',
     },
 }
 app.tags = ['Users', 'Relationships', 'Guilds']
