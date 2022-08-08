@@ -136,10 +136,21 @@ def create_guild(json: CreateGuildObject, headers: AuthorizationObject):
         type=MessageType.JOIN,
     )
 
-    dispatch_event('guilds', Event('GUILD_CREATE', objectify(dict(guild)), user_id=user.id))
-    dispatch_event('channels', Event('CHANNEL_CREATE', objectify(merged_category), user_id=user.id))
-    dispatch_event('channels', Event('CHANNEL_CREATE', objectify(merged_text_channel), user_id=user.id))
-    dispatch_event('members', Event('MEMBER_JOIN', objectify(dict(member)), user_id=user.id))
-    dispatch_event('messages', Event('MESSAGE_CREATE', objectify(dict(message)), user_id=user.id))
+    dispatch_event(
+        'guilds', Event('GUILD_CREATE', objectify(dict(guild)), user_id=user.id)
+    )
+    dispatch_event(
+        'channels', Event('CHANNEL_CREATE', objectify(merged_category), user_id=user.id)
+    )
+    dispatch_event(
+        'channels',
+        Event('CHANNEL_CREATE', objectify(merged_text_channel), user_id=user.id),
+    )
+    dispatch_event(
+        'members', Event('MEMBER_JOIN', objectify(dict(member)), user_id=user.id)
+    )
+    dispatch_event(
+        'messages', Event('MESSAGE_CREATE', objectify(dict(message)), user_id=user.id)
+    )
 
     return objectify(dict(guild))

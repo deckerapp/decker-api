@@ -10,7 +10,15 @@ from typing import Any
 from apiflask import APIBlueprint, HTTPError
 from apiflask.schemas import EmptySchema
 
-from ..database import Event, NotFound, Relationship, Settings, User, dispatch_event, objectify
+from ..database import (
+    Event,
+    NotFound,
+    Relationship,
+    Settings,
+    User,
+    dispatch_event,
+    objectify,
+)
 from ..enums import Relation
 from ..users.routes import authorize
 from ..users.schemas import Authorization, AuthorizationObject
