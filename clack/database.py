@@ -15,7 +15,7 @@ import itsdangerous
 import msgspec
 from apiflask import HTTPError
 from cassandra.auth import PlainTextAuthProvider
-from cassandra.cqlengine import columns, connection, management, models
+from cassandra.cqlengine import columns, connection, management, models, query
 from cassandra.io import asyncorereactor, geventreactor
 from kafka import KafkaProducer
 
@@ -32,6 +32,7 @@ auth_provider = PlainTextAuthProvider(
     os.getenv('SCYLLA_USER'), os.getenv('SCYLLA_PASSWORD')
 )
 T = TypeVar('T', dict[str, Any], list[Any])
+NotFound = query.DoesNotExist
 
 
 def get_hosts(name: str):
@@ -347,7 +348,7 @@ def verify_token(
 
     try:
         user: User = User.objects(User.id == user_id).only(['password']).get()
-    except:
+    except NotFound:
         raise HTTPError(401, 'Object for Authorization not found')
 
     signer = itsdangerous.TimestampSigner(user.password)

@@ -16,6 +16,7 @@ from ..database import (
     Event,
     GatewaySessionLimit,
     Member,
+    NotFound,
     RecoveryCode,
     Settings,
     User,
@@ -77,7 +78,7 @@ def get_available_discriminator(username: str):
             User.objects(
                 User.username == username, User.discriminator == discriminator
             ).get()
-        except:
+        except NotFound:
             return discriminator
         else:
             continue
@@ -90,7 +91,7 @@ def is_available(username: str, discriminator: int):
         User.objects(
             User.username == username, User.discriminator == discriminator
         ).get()
-    except:
+    except NotFound:
         return
     else:
         raise HTTPError(400, 'Discriminator is already taken')
@@ -126,7 +127,7 @@ def verify_mfa(user_id: int, code: int | str | None) -> None:
 def create_user(json: CreateUser) -> User:
     try:
         User.objects(User.email == json['email']).get()
-    except:
+    except NotFound:
         pass
     else:
         raise HTTPError(400, 'This email is already used.')
@@ -184,7 +185,7 @@ def login(json: CreateTokenObject):
         with_pswd: User = (
             User.objects(User.email == json['email']).only(['password', 'id']).get()
         )
-    except:
+    except NotFound:
         raise HTTPError(400, 'Invalid email or password')
 
     try:
@@ -258,7 +259,7 @@ def get_gateway(headers: AuthorizationObject):
             .defer(['user_id'])
             .get()
         )
-    except:
+    except NotFound:
         gateway_session_limit = dict(GatewaySessionLimit.create(user_id=user.id))
         gateway_session_limit.pop('user_id')
 

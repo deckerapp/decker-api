@@ -10,7 +10,7 @@ from typing import Any
 from apiflask import APIBlueprint, HTTPError
 from apiflask.schemas import EmptySchema
 
-from ..database import Event, Relationship, Settings, User, dispatch_event, objectify
+from ..database import Event, NotFound, Relationship, Settings, User, dispatch_event, objectify
 from ..enums import Relation
 from ..users.routes import authorize
 from ..users.schemas import Authorization, AuthorizationObject
@@ -86,7 +86,7 @@ def create_relationship(json: MakeRelationshipData, headers: AuthorizationObject
             peer_relation: Relationship = Relationship.objects(
                 Relationship.user_id == peer.id, Relationship.target_id == target.id
             ).get()
-        except:
+        except NotFound:
             peer_relation = None
         else:
             if peer_relation.type == Relation.BLOCKED:
@@ -101,7 +101,7 @@ def create_relationship(json: MakeRelationshipData, headers: AuthorizationObject
             current_relation: Relationship = Relationship.objects(
                 Relationship.user_id == target.id, Relationship.target_id == peer.id
             ).get()
-        except:
+        except NotFound:
             pass
         else:
             if current_relation.type == Relation.BLOCKED:
@@ -113,7 +113,7 @@ def create_relationship(json: MakeRelationshipData, headers: AuthorizationObject
             peer_relation: Relationship = Relationship.objects(
                 Relationship.user_id == peer.id, Relationship.target_id == target.id
             ).get()
-        except:
+        except NotFound:
             peer_relation: Relationship = Relationship.create(
                 user_id=peer.id, target_id=target.id, type=Relation.BLOCKED
             )
@@ -157,14 +157,14 @@ def modify_relationship(json: ModifyRelationshipData, headers: AuthorizationObje
 
     try:
         target: User = User.objects(User.id == json['user_id']).get()
-    except:
+    except NotFound:
         raise HTTPError(400, 'Target user does not exist')
 
     try:
         peer_relationship: Relationship = Relationship.objects(
             Relationship.user_id == peer.id, Relationship.target_id == target.id
         ).get()
-    except:
+    except NotFound:
         raise HTTPError(400, 'You do not have a relationship with this user')
 
     if peer_relationship.type == Relation.INCOMING:
@@ -206,14 +206,14 @@ def remove_relationship(user_id: int, headers: AuthorizationObject):
 
     try:
         target: User = User.objects(User.id == user_id).get()
-    except:
+    except NotFound:
         raise HTTPError(404, 'Target user does not exist')
 
     try:
         peer_relation: Relationship = Relationship.objects(
             Relationship.user_id == peer.id, Relationship.target_id == target.id
         ).get()
-    except:
+    except NotFound:
         raise HTTPError(400, 'You don\'t have a relationship with this user')
     else:
         peer_relation.delete()
@@ -226,7 +226,7 @@ def remove_relationship(user_id: int, headers: AuthorizationObject):
         target_relationship: Relationship = Relationship.objects(
             Relationship.user_id == target.id, Relationship.target_id == peer.id
         ).get()
-    except:
+    except NotFound:
         # blocked users
         pass
     else:

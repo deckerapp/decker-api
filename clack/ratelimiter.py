@@ -10,7 +10,7 @@ import os
 from flask import request
 from flask_limiter import Limiter, util
 
-from .database import verify_token
+from .database import NotFound, verify_token
 
 
 def key_func():
@@ -18,7 +18,7 @@ def key_func():
 
     try:
         user = verify_token(token=auth)
-    except:
+    except NotFound:
         return util.get_remote_address()
     else:
         return str(user.id)

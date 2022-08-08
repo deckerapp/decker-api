@@ -5,6 +5,7 @@ Copyright Clack and/or licensed to Clack under one
 or more contributor license agreements. Licensed under the Elastic License;
 you may not use this file except in compliance with the Elastic License.
 """
+import os
 from apiflask import APIFlask
 from dotenv import load_dotenv
 
@@ -16,8 +17,11 @@ from clack.users.routes import registerr, users
 
 load_dotenv()
 
+import sentry_sdk
 from clack.database import connect, sync_tables
 
+# TODO: Test and maybe modify traces_sample_rate.
+sentry_sdk.init(dsn=os.getenv('SENTRY_DSN'), traces_sample_rate=1.0)
 connect()
 sync_tables()
 
