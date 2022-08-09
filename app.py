@@ -1,7 +1,7 @@
 """
 Elastic License 2.0
 
-Copyright Discorse and/or licensed to Discorse under one
+Copyright Discend and/or licensed to Discend under one
 or more contributor license agreements. Licensed under the Elastic License;
 you may not use this file except in compliance with the Elastic License.
 """
@@ -11,17 +11,17 @@ import os
 from apiflask import APIFlask
 from dotenv import load_dotenv
 
-from discorse import ratelimiter
-from discorse.guilds.routes import guilds
-from discorse.json import ORJSONDecoder, ORJSONEncoder
-from discorse.relationships.routes import relationships
-from discorse.users.routes import registerr, users
+from discend import ratelimiter
+from discend.guilds.routes import guilds
+from discend.json import ORJSONDecoder, ORJSONEncoder
+from discend.relationships.routes import relationships
+from discend.users.routes import registerr, users
 
 load_dotenv()
 
 import sentry_sdk
 
-from discorse.database import connect, sync_tables
+from discend.database import connect, sync_tables
 
 # TODO: Test and maybe modify traces_sample_rate.
 sentry_sdk.init(dsn=os.getenv('SENTRY_DSN'), traces_sample_rate=1.0)
@@ -30,7 +30,7 @@ sync_tables()
 
 app = APIFlask(
     __name__,
-    title='Discorse API',
+    title='Discend API',
     version='v1',
     spec_path='/__development/openapi.json',
     docs_path='/__development/board',
@@ -39,7 +39,7 @@ app = APIFlask(
 
 ratelimiter.limiter.init_app(app=app)
 app.config['INFO'] = {
-    'description': 'The API for Discorse.',
+    'description': 'The API for Discend.',
     'termsOfService': 'https://derailed.one/terms',
     'contact': {'name': 'Support', 'email': 'support@derailed.one'},
     'license': {

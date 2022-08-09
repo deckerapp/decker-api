@@ -1,7 +1,7 @@
 """
 Elastic License 2.0
 
-Copyright Discorse and/or licensed to Discorse under one
+Copyright Discend and/or licensed to Discend under one
 or more contributor license agreements. Licensed under the Elastic License;
 you may not use this file except in compliance with the Elastic License.
 """
@@ -19,8 +19,8 @@ from cassandra.cqlengine import columns, connection, management, models, query
 from cassandra.io import asyncorereactor, geventreactor
 from kafka import KafkaProducer
 
-from discorse.enforgement import forger
-from discorse.enums import (
+from discend.enforgement import forger
+from discend.enums import (
     ContentFilterLevel,
     MFALevel,
     NotificationLevel,
@@ -66,7 +66,7 @@ def get_trace():
     proc = os.getpid()
     thread = threading.current_thread().ident
 
-    return f'discorse-api-{thread}-{proc}'
+    return f'discend-api-{thread}-{proc}'
 
 
 class Event(msgspec.Struct):

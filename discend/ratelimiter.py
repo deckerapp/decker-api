@@ -1,7 +1,7 @@
 """
 Elastic License 2.0
 
-Copyright Discorse and/or licensed to Discorse under one
+Copyright Discend and/or licensed to Discend under one
 or more contributor license agreements. Licensed under the Elastic License;
 you may not use this file except in compliance with the Elastic License.
 """
@@ -26,9 +26,9 @@ def key_func():
 
 limiter = Limiter(
     key_func=key_func,
-    key_prefix='discorse_brute',
+    key_prefix='discend_rate_limit',
     headers_enabled=True,
     strategy='fixed-window-elastic-expiry',
     storage_uri=os.getenv('STORAGE_URI'),
-    default_limits=['50/second'],
+    default_limits=['30/second'],
 )

@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 
-from discorse.database import connect, sync_tables
-from discorse.users import routes
+from discend.database import connect, sync_tables
+from discend.users import routes
 
 load_dotenv()
 
