@@ -327,6 +327,13 @@ class Presence(models.Model):
     client_status: str = columns.Text()
 
 
+class Note(models.Model):
+    __table_name__ = 'notes'
+    creator_id: int = columns.BigInt(primary_key=True)
+    user_id: int = columns.BigInt()
+    content: str = columns.Text()
+
+
 def create_token(user_id: int, user_password: str) -> str:
     # sourcery skip: instance-method-first-arg-name
     signer = itsdangerous.TimestampSigner(user_password)

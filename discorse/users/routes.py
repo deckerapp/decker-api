@@ -10,12 +10,14 @@ import secrets
 
 import pyotp
 from apiflask import APIBlueprint, HTTPError
+from apiflask.schemas import EmptySchema
 from argon2 import PasswordHasher, exceptions
 
 from ..database import (
     Event,
     GatewaySessionLimit,
     Member,
+    Note,
     NotFound,
     RecoveryCode,
     Settings,
@@ -36,9 +38,9 @@ from .schemas import (
     EditUser,
     EditUserObject,
     Gateway,
-    Register,
-    UserObject,
 )
+from .schemas import Note as NoteSchema
+from .schemas import NoteObject, Register, UserObject
 
 users = APIBlueprint('users', __name__)
 registerr = APIBlueprint('register', 'discorse.register')
@@ -275,3 +277,61 @@ def get_gateway(headers: AuthorizationObject):
         'shards': shards,
         'session_start_limit': gateway_session_limit,
     }
+
+
+@users.get('/users/@me/notes')
+@users.input(Authorization, 'headers')
+@users.output(NoteSchema(many=True))
+@users.doc(tag='Notes')
+async def get_notes(headers: AuthorizationObject):
+    user = authorize(headers['authorization'], ['id'])
+
+    notes = Note.objects(Note.creator_id == user.id).defer(['creator_id']).all()
+
+    return [objectify(dict(note)) for note in notes]
+
+
+@users.get('/users/@me/notes/<int:user_id>')
+@users.input(Authorization, 'headers')
+@users.output(NoteSchema)
+@users.doc(tag='Notes')
+async def get_note(user_id: int, headers: AuthorizationObject):
+    user = authorize(headers['authorization'], ['id'])
+
+    try:
+        note = (
+            Note.objects(Note.creator_id == user.id, Note.user_id == user_id)
+            .defer(['creator_id'])
+            .get()
+        )
+    except NotFound:
+        raise HTTPError(404, 'Note for user not found')
+
+    return objectify(dict(note))
+
+
+@users.post('/users/@me/notes')
+@users.input(Authorization, 'headers')
+@users.input(NoteSchema, 'json')
+@users.output(EmptySchema)
+@users.doc(tag='Notes')
+async def create_note(headers: AuthorizationObject, json: NoteObject):
+    user = authorize(headers['authorization'], ['id'])
+
+    try:
+        User.objects(User.id == json['user_id']).only(['id']).get()
+    except NotFound:
+        raise HTTPError(400, 'User does not exist')
+
+    try:
+        note: Note = (
+            Note.objects(Note.creator_id == user.id, Note.user_id == json['user_id'])
+            .defer(['creator_id'])
+            .get()
+        )
+    except NotFound:
+        Note.create(
+            creator_id=user.id, user_id=json['user_id'], content=json['content']
+        )
+    else:
+        note.update(content=json['content'])

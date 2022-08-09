@@ -96,3 +96,13 @@ class Gateway(Schema):
     url = String()
     shards = Integer()
     session_start_limit = Nested(SessionLimit)
+
+
+class Note(Schema):
+    user_id = Integer()
+    content = String(required=True, validate=(Length(1, 1000)))
+
+
+class NoteObject(TypedDict):
+    user_id: int
+    content: str
