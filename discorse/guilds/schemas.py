@@ -1,7 +1,7 @@
 """
 Elastic License 2.0
 
-Copyright Elasic and/or licensed to Elasic under one
+Copyright Discorse and/or licensed to Discorse under one
 or more contributor license agreements. Licensed under the Elastic License;
 you may not use this file except in compliance with the Elastic License.
 """
@@ -12,7 +12,7 @@ from apiflask.fields import Boolean, DateTime, Field, Integer, List, Nested, Str
 from apiflask.validators import Length, OneOf
 from typing_extensions import NotRequired
 
-from elasic.users.schemas import PublicUserObject
+from discorse.users.schemas import PublicUserObject
 
 
 class CreateGuild(Schema):

@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 
-from elasic.database import connect, sync_tables
-from elasic.users import routes
+from discorse.database import connect, sync_tables
+from discorse.users import routes
 
 load_dotenv()
 

@@ -1,7 +1,7 @@
 """
 Elastic License 2.0
 
-Copyright Elasic and/or licensed to Elasic under one
+Copyright Discorse and/or licensed to Discorse under one
 or more contributor license agreements. Licensed under the Elastic License;
 you may not use this file except in compliance with the Elastic License.
 """
@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 
 from apiflask import APIBlueprint, HTTPError
 
-from elasic.database import (
+from discorse.database import (
     CategoryChannel,
     Channel,
     Event,
@@ -22,9 +22,9 @@ from elasic.database import (
     dispatch_event,
     objectify,
 )
-from elasic.enums import ChannelType, MessageType, PermissionBooler
-from elasic.users.routes import authorize
-from elasic.users.schemas import Authorization, AuthorizationObject
+from discorse.enums import ChannelType, MessageType, PermissionBooler
+from discorse.users.routes import authorize
+from discorse.users.schemas import Authorization, AuthorizationObject
 
 from ..enforgement import forger
 from .schemas import CreateGuild, CreateGuildObject, FullGuild

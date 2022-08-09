@@ -1,7 +1,7 @@
 """
 Elastic License 2.0
 
-Copyright Elasic and/or licensed to Elasic under one
+Copyright Discorse and/or licensed to Discorse under one
 or more contributor license agreements. Licensed under the Elastic License;
 you may not use this file except in compliance with the Elastic License.
 """
@@ -19,8 +19,8 @@ from cassandra.cqlengine import columns, connection, management, models, query
 from cassandra.io import asyncorereactor, geventreactor
 from kafka import KafkaProducer
 
-from elasic.enforgement import forger
-from elasic.enums import (
+from discorse.enforgement import forger
+from discorse.enums import (
     ContentFilterLevel,
     MFALevel,
     NotificationLevel,
@@ -66,7 +66,7 @@ def get_trace():
     proc = os.getpid()
     thread = threading.current_thread().ident
 
-    return f'elasic-api-{thread}-{proc}'
+    return f'discorse-api-{thread}-{proc}'
 
 
 class Event(msgspec.Struct):
