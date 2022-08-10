@@ -47,7 +47,12 @@ app.config['INFO'] = {
         'url': 'https://www.elastic.co/licensing/elastic-license',
     },
 }
-app.tags = ['Users', 'Relationships', 'Guilds', 'Notes']
+app.tags = [
+    'Users',
+    'Relationships',
+    'Guilds',
+    'Notes',
+]
 app.json_encoder = ORJSONEncoder
 app.json_decoder = ORJSONDecoder
 
