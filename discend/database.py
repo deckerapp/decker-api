@@ -371,10 +371,10 @@ def verify_token(
         signer.unsign(token)
 
         if fields is not None and not isinstance(fields, list):
-            fields = list(fields)
+            fields = [fields]
 
         if rm_fields is not None and not isinstance(rm_fields, list):
-            rm_fields = list(rm_fields)
+            rm_fields = [rm_fields]
 
         if fields in ['id', ['id']]:
             user.id = user_id
