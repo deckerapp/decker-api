@@ -30,7 +30,7 @@ class CreateGuildObject(TypedDict):
     name: str
     icon: NotRequired[str]
     verification_level: NotRequired[
-        Literal[0] | Literal[1] | Literal[2] | Literal[3] | Literal[4]
+        Literal[0, 1, 2, 3, 4]
     ]
     default_message_notifications: NotRequired[Literal[0] | Literal[1]]
     explicit_content_filter: NotRequired[Literal[0] | Literal[1] | Literal[2]]
