@@ -50,7 +50,7 @@ def connect():
 
     connection.setup(
         get_hosts('SCYLLA_HOSTS'),
-        'derailed',
+        'discend',
         auth_provider=auth_provider,
         connect_timeout=100,
         retry_connect=True,
