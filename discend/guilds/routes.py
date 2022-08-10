@@ -9,14 +9,18 @@ you may not use this file except in compliance with the Elastic License.
 from datetime import datetime, timezone
 
 from apiflask import APIBlueprint, HTTPError
+from apiflask.schemas import EmptySchema
 
+from discend.constants import MAX_GUILDS
 from discend.database import (
     CategoryChannel,
     Channel,
+    EmptyBucket,
     Event,
     Guild,
     Member,
     Message,
+    NotFound,
     Settings,
     TextChannel,
     dispatch_event,
@@ -35,7 +39,7 @@ guilds = APIBlueprint('guilds', __name__)
 def check_count(user_id: int) -> None:
     guild_count = Member.objects(Member.user_id == user_id).count()
 
-    if guild_count == 200:
+    if guild_count == MAX_GUILDS:
         raise HTTPError(400, 'Maximum Guilds Reached')
 
 
@@ -51,6 +55,7 @@ def create_member(
     )
 
 
+# TODO: Move this and create_message to channels/messages
 def create_channel(name: str | None, type: int) -> Channel:
     return Channel.create(id=forger.forge(), name=name, type=type)
 
@@ -82,6 +87,52 @@ def create_message(
         flags=flags,
         referenced_message_id=referenced_message_id,
     )
+
+
+def get_messages(
+    msg: int | None,
+    channel_id: int,
+    multiply: bool = False,
+    append_empty_buckets: bool = True,
+) -> Message | list[Message]:
+    empty_buckets = [
+        bucket.bucket
+        for bucket in EmptyBucket.objects(EmptyBucket.channel_id == channel_id).all()
+    ]
+
+    if multiply:
+        messages = []
+        for bucket in range(forger.make_bucket(msg)):
+            if bucket in empty_buckets or bucket == 0:
+                continue
+            msgs: list[Message] = Message.objects(
+                Message.channel_id == channel_id, Message.bucket == bucket
+            ).all()
+
+            if not msgs and append_empty_buckets:
+                EmptyBucket.create(channel_id=channel_id, bucket=bucket)
+
+            for msg in msgs:
+                messages.append(msg)
+                if msg and len(messages == msg):
+                    break
+        return messages
+    else:
+        for bucket in range(forger.make_bucket(msg)):
+            if bucket in empty_buckets or bucket == 0:
+                continue
+            try:
+                msg: Message = Message.objects(
+                    Message.channel_id == channel_id,
+                    Message.bucket == bucket,
+                    Message.id == msg,
+                ).get()
+            except NotFound:
+                continue
+            else:
+                return msg
+
+        raise HTTPError(404, 'Message not found')
 
 
 @guilds.post('/guilds')
@@ -154,3 +205,80 @@ def create_guild(json: CreateGuildObject, headers: AuthorizationObject):
     )
 
     return objectify(dict(guild))
+
+
+@guilds.delete('/guilds/<int:guild_id>')
+@guilds.output(EmptySchema, 204)
+def delete_guild(guild_id: int, headers: AuthorizationObject):
+    user = authorize(headers['authorization'], fields='id')
+
+    try:
+        guild: Guild = Guild.objects(Guild.id == guild_id).get()
+    except NotFound:
+        raise HTTPError(404, 'Guild not found')
+
+    if guild.owner_id != user.id:
+        raise HTTPError(403, 'You are not owner of this Guild')
+
+    # TODO: Make it so Guilds above a certain member count cannot be deleteed
+    text_channels: list[TextChannel] = TextChannel.objects(
+        TextChannel.guild_id == guild.id
+    ).all()
+    category_channels: list[CategoryChannel] = CategoryChannel.objects(
+        CategoryChannel.guild_id == guild.id
+    ).all()
+
+    for text_channel in text_channels:
+        messages = get_messages(
+            None,
+            channel_id=text_channel.channel_id,
+            multiply=True,
+            append_empty_buckets=False,
+        )
+
+        for message in messages:
+            message.delete()
+
+        empty_buckets: list[EmptyBucket] = EmptyBucket.objects(
+            EmptyBucket.channel_id == text_channel.channel_id
+        ).all()
+
+        for bucket in empty_buckets:
+            bucket.delete()
+
+        channel = Channel.objects(Channel.id == text_channel.channel_id).get()
+
+        channel.delete()
+        text_channel.delete()
+
+    for category_channel in category_channels:
+        messages = get_messages(
+            None,
+            channel_id=category_channel.channel_id,
+            multiply=True,
+            append_empty_buckets=False,
+        )
+
+        for message in messages:
+            message.delete()
+
+        empty_buckets: list[EmptyBucket] = EmptyBucket.objects(
+            EmptyBucket.channel_id == category_channel.channel_id
+        ).all()
+
+        for bucket in empty_buckets:
+            bucket.delete()
+
+        channel = Channel.objects(Channel.id == category_channel.channel_id).get()
+
+        channel.delete()
+        category_channel.delete()
+
+    members: list[Member] = Member.objects(Member.guild_id == guild.id).all()
+
+    for member in members:
+        member.delete()
+
+    dispatch_event(
+        'guilds', Event('GUILD_DELETE', {'id': str(guild.id)}, guild_id=guild.id)
+    )

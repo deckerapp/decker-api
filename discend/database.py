@@ -334,6 +334,12 @@ class Note(models.Model):
     content: str = columns.Text()
 
 
+class EmptyBucket(models.Model):
+    __table_name__ = 'empty_buckets'
+    channel_id: int = columns.BigInt(primary_key=True)
+    bucket: int = columns.Integer()
+
+
 def create_token(user_id: int, user_password: str) -> str:
     # sourcery skip: instance-method-first-arg-name
     signer = itsdangerous.TimestampSigner(user_password)
@@ -452,3 +458,4 @@ def sync_tables():
     management.sync_table(MentionedUser)
     management.sync_table(Presence)
     management.sync_table(Message)
+    management.sync_table(EmptyBucket)

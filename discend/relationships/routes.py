@@ -10,6 +10,8 @@ from typing import Any
 from apiflask import APIBlueprint, HTTPError
 from apiflask.schemas import EmptySchema
 
+from discend.constants import MAX_RELATIONSHIPS
+
 from ..database import (
     Event,
     NotFound,
@@ -51,7 +53,7 @@ def didnt_pass_max_relationships(user: User, target: User):
         Relationship.target_id == user.id
     ).count()
 
-    if user_main_relationships + user_targeted_relationships == 5000:
+    if user_main_relationships + user_targeted_relationships == MAX_RELATIONSHIPS:
         raise HTTPError(400, 'You have reached your maximum relationship limit')
 
     target_main_relationships: int = Relationship.objects(
@@ -61,7 +63,7 @@ def didnt_pass_max_relationships(user: User, target: User):
         Relationship.target_id == target.id
     ).count()
 
-    if target_main_relationships + target_targeted_relationships == 5000:
+    if target_main_relationships + target_targeted_relationships == MAX_RELATIONSHIPS:
         raise HTTPError(400, 'Target user has reached their maximum relationship limit')
 
 
