@@ -1,18 +1,18 @@
 """
 Elastic License 2.0
 
-Copyright Discend and/or licensed to Discend under one
+Copyright Couchub and/or licensed to Couchub under one
 or more contributor license agreements. Licensed under the Elastic License;
 you may not use this file except in compliance with the Elastic License.
 """
 from typing import Literal, TypedDict
 
 from apiflask import Schema
-from apiflask.fields import Boolean, DateTime, Field, Integer, List, Nested, String
+from apiflask.fields import Boolean, DateTime, Integer, Nested, String
 from apiflask.validators import Length, OneOf
 from typing_extensions import NotRequired
 
-from discend.users.schemas import PublicUserObject
+from couchub.users.schemas import PublicUserObject
 
 
 class CreateGuild(Schema):
@@ -21,17 +21,31 @@ class CreateGuild(Schema):
         validate=[Length(2, 100)],
     )
     icon = String()
-    verification_level = Integer(validate=OneOf([0, 1, 2, 3, 4]))
     default_message_notifications = Integer(validate=OneOf([0, 1]))
-    explicit_content_filter = Integer(validate=OneOf([0, 1, 2]))
+
+
+class EditGuild(Schema):
+    name = String(validate=[Length(2, 100)])
+    icon = String()
+    banner = String()
+    default_permissions = Integer()
+    default_notification_level = Integer(validate=OneOf([0, 1]))
+    mfa_level = Integer(validate=OneOf([0, 1]))
+
+
+class EditGuildObject(TypedDict):
+    name: str
+    icon: str
+    banner: str
+    default_permissions: int
+    default_notification_level: Literal[0, 1]
+    mfa_level: Literal[0, 1]
 
 
 class CreateGuildObject(TypedDict):
     name: str
     icon: NotRequired[str]
-    verification_level: NotRequired[Literal[0, 1, 2, 3, 4]]
     default_message_notifications: NotRequired[Literal[0] | Literal[1]]
-    explicit_content_filter: NotRequired[Literal[0] | Literal[1] | Literal[2]]
 
 
 class PartialGuild(Schema):

@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 
-from discend.database import connect, sync_tables
-from discend.users import routes
+from couchub.database import connect, sync_tables
+from couchub.users import routes
 
 load_dotenv()
 

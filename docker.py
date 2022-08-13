@@ -1,7 +1,7 @@
 """
 Elastic License 2.0
 
-Copyright Discend and/or licensed to Discend under one
+Copyright Couchub and/or licensed to Couchub under one
 or more contributor license agreements. Licensed under the Elastic License;
 you may not use this file except in compliance with the Elastic License.
 """
@@ -22,8 +22,8 @@ you may not use this file except in compliance with the Elastic License.
 # ⠀⠀⠀⠀⠀⠀⠀⠹⣿⣿⣿⣿⣦⣤⣤⣤⣤⣾⣿⣿⣿⣿⣿⣿⣿⣿⡟⠀⠀⠀
 # ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠻⢿⣿⣿⣿⣿⣿⣿⠿⠋⠉⠛⠋⠉⠉⠁⠀⠀⠀⠀
 # ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠉⠉⠁
-# https://github.com/discend-archive/api/blob/master/run.py#L1-L16
-# https://github.com/discend-archive/venera/blob/canary/run.py#L1-L16
+# https://github.com/couchub-archive/api/blob/master/run.py#L1-L16
+# https://github.com/couchub-archive/venera/blob/canary/run.py#L1-L16
 # https://github.com/concordchat/concord-api/blob/canary/run.py#L1-L16
 
 import os

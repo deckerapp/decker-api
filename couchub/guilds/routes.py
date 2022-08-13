@@ -1,7 +1,7 @@
 """
 Elastic License 2.0
 
-Copyright Discend and/or licensed to Discend under one
+Copyright Couchub and/or licensed to Couchub under one
 or more contributor license agreements. Licensed under the Elastic License;
 you may not use this file except in compliance with the Elastic License.
 """
@@ -11,8 +11,8 @@ from datetime import datetime, timezone
 from apiflask import APIBlueprint, HTTPError
 from apiflask.schemas import EmptySchema
 
-from discend.constants import MAX_GUILDS
-from discend.database import (
+from couchub.constants import MAX_GUILDS
+from couchub.database import (
     CategoryChannel,
     Channel,
     EmptyBucket,
@@ -26,12 +26,18 @@ from discend.database import (
     dispatch_event,
     objectify,
 )
-from discend.enums import ChannelType, MessageType, PermissionBooler
-from discend.users.routes import authorize
-from discend.users.schemas import Authorization, AuthorizationObject
+from couchub.enums import ChannelType, MessageType, PermissionBooler
+from couchub.users.routes import authorize
+from couchub.users.schemas import Authorization, AuthorizationObject
 
 from ..enforgement import forger
-from .schemas import CreateGuild, CreateGuildObject, FullGuild
+from .schemas import (
+    CreateGuild,
+    CreateGuildObject,
+    EditGuild,
+    EditGuildObject,
+    FullGuild,
+)
 
 guilds = APIBlueprint('guilds', __name__)
 
@@ -207,7 +213,15 @@ def create_guild(json: CreateGuildObject, headers: AuthorizationObject):
     return objectify(dict(guild))
 
 
+@guilds.patch('/guilds/<int:guild_id>')
+@guilds.input(EditGuild)
+@guilds.input(Authorization, 'headers')
+def edit_guild(guild_id: int, json: EditGuildObject, headers: AuthorizationObject):
+    user = authorize()
+
+
 @guilds.delete('/guilds/<int:guild_id>')
+@guilds.input(Authorization, 'headers')
 @guilds.output(EmptySchema, 204)
 def delete_guild(guild_id: int, headers: AuthorizationObject):
     user = authorize(headers['authorization'], fields='id')

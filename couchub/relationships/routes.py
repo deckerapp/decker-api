@@ -1,7 +1,7 @@
 """
 Elastic License 2.0
 
-Copyright Discend and/or licensed to Discend under one
+Copyright Couchub and/or licensed to Couchub under one
 or more contributor license agreements. Licensed under the Elastic License;
 you may not use this file except in compliance with the Elastic License.
 """
@@ -10,7 +10,7 @@ from typing import Any
 from apiflask import APIBlueprint, HTTPError
 from apiflask.schemas import EmptySchema
 
-from discend.constants import MAX_RELATIONSHIPS
+from couchub.constants import MAX_RELATIONSHIPS
 
 from ..database import (
     Event,

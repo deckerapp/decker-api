@@ -1,11 +1,13 @@
 """
 Elastic License 2.0
 
-Copyright Discend and/or licensed to Discend under one
+Copyright Couchub and/or licensed to Couchub under one
 or more contributor license agreements. Licensed under the Elastic License;
 you may not use this file except in compliance with the Elastic License.
 """
 import functools
+import itertools
+from typing import TypedDict
 
 
 def flagged(value: int, visible: int) -> bool:
@@ -37,27 +39,6 @@ class ChannelType:
 class NotificationLevel:
     ALL = 0
     MENTIONS = 1
-
-
-class ContentFilterLevel:
-    DISABLED = 0
-    MEMBERS_WITHOUT_ROLES = 1
-    ALL = 2
-
-
-class VerificationLevel:
-    NONE = 0
-    LOW = 1
-    MEDIUM = 2
-    HIGH = 3
-    VERY_HIGH = 4
-
-
-class NSFWLevel:
-    UNKNOWN = 0
-    SAFE = 1
-    EXPLICIT = 2
-    AGE_RESTRICTED = 3
 
 
 class MFALevel:
@@ -186,3 +167,71 @@ class PermissionBooler:
         self.send_messages_in_threads = partial(Permission.SEND_MESSAGES_IN_THREADS)
         self.use_embedded_activities = partial(Permission.USE_EMBEDDED_ACTIVITIES)
         self.moderate_members = partial(Permission.MODERATE_MEMBERS)
+
+
+class Value(TypedDict):
+    position: int
+    value: int
+
+
+PERMISSION_VALUES = [
+    1 << 0,
+    1 << 1,
+    1 << 2,
+    1 << 3,
+    1 << 4,
+    1 << 5,
+    1 << 6,
+    1 << 7,
+    1 << 8,
+    1 << 9,
+    1 << 10,
+    1 << 11,
+    1 << 12,
+    1 << 13,
+    1 << 14,
+    1 << 15,
+    1 << 16,
+    1 << 17,
+    1 << 18,
+    1 << 19,
+    1 << 20,
+    1 << 21,
+    1 << 22,
+    1 << 23,
+    1 << 24,
+    1 << 25,
+    1 << 26,
+    1 << 27,
+    1 << 28,
+    1 << 29,
+    1 << 30,
+    1 << 31,
+    1 << 32,
+    1 << 33,
+    1 << 34,
+    1 << 35,
+    1 << 36,
+    1 << 37,
+    1 << 38,
+    1 << 39,
+    1 << 40,
+]
+
+
+def get_core_value(*values: Value):
+    ret = 0
+    _internal = []
+
+    for value in values:
+        _internal.insert(value['position'], value['value'])
+
+    for value, permission_value in itertools.product(_internal, PERMISSION_VALUES):
+        if flagged(ret, permission_value) and not flagged(value, permission_value):
+            ret -= permission_value
+        elif not flagged(ret, permission_value) and flagged(value, permission_value):
+            ret |= permission_value
+        else:
+            continue
+
+    return ret

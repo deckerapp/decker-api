@@ -1,7 +1,7 @@
 """
 Elastic License 2.0
 
-Copyright Discend and/or licensed to Discend under one
+Copyright Couchub and/or licensed to Couchub under one
 or more contributor license agreements. Licensed under the Elastic License;
 you may not use this file except in compliance with the Elastic License.
 """
@@ -19,14 +19,8 @@ from cassandra.cqlengine import columns, connection, management, models, query
 from cassandra.io import asyncorereactor, geventreactor
 from kafka import KafkaProducer
 
-from discend.enforgement import forger
-from discend.enums import (
-    ContentFilterLevel,
-    MFALevel,
-    NotificationLevel,
-    NSFWLevel,
-    VerificationLevel,
-)
+from couchub.enforgement import forger
+from couchub.enums import MFALevel, NotificationLevel
 
 auth_provider = PlainTextAuthProvider(
     os.getenv('SCYLLA_USER'), os.getenv('SCYLLA_PASSWORD')
@@ -50,7 +44,7 @@ def connect():
 
     connection.setup(
         get_hosts('SCYLLA_HOSTS'),
-        'discend',
+        'couchub',
         auth_provider=auth_provider,
         connect_timeout=100,
         retry_connect=True,
@@ -66,7 +60,7 @@ def get_trace():
     proc = os.getpid()
     thread = threading.current_thread().ident
 
-    return f'discend-api-{thread}-{proc}'
+    return f'couchub-api-{thread}-{proc}'
 
 
 class Event(msgspec.Struct):
@@ -198,29 +192,17 @@ class Guild(models.Model):
     id: int = columns.BigInt(primary_key=True)
     name: str = columns.Text()
     icon: str = columns.Text()
-    splash: str = columns.Text()
-    discovery_splash: str = columns.Text()
     owner_id: int = columns.BigInt()
     default_permissions: int = columns.BigInt()
-    afk_channel_id: int = columns.BigInt()
-    afk_timeout: int = columns.Integer()
     default_message_notification_level: int = columns.Integer(
         default=NotificationLevel.ALL
     )
-    explicit_content_filter: int = columns.Integer(default=ContentFilterLevel.DISABLED)
     mfa_level: int = columns.Integer(default=MFALevel.NONE)
-    system_channel_id: int = columns.BigInt()
-    system_channel_flags: int = columns.Integer()
-    rules_channel_id: int = columns.BigInt()
-    max_presences: int = columns.Integer(default=10000)
-    max_members: int = columns.Integer(default=4000)
+    max_members: int = columns.Integer(default=1000)
     vanity_url_code: str = columns.Text()
     description: str = columns.Text()
     banner: str = columns.Text()
     preferred_locale: str = columns.Text()
-    guild_updates_channel_id: int = columns.BigInt()
-    nsfw_level: int = columns.Integer(default=NSFWLevel.UNKNOWN)
-    verification_level: int = columns.Integer(default=VerificationLevel.NONE)
 
 
 class Feature(models.Model):
