@@ -162,8 +162,6 @@ def create_guild(json: CreateGuildObject, headers: AuthorizationObject):
         id=forger.forge(),
         name=json['name'],
         default_message_notification_level=json.get('default_message_notifications', 0),
-        explicit_content_filter=json.get('explicit_content_filter', 0),
-        verification_level=json.get('verification_level', 0),
         owner_id=user.id,
         preferred_locale=locale,
         default_permissions=PermissionBooler.DEFAULT,
@@ -217,7 +215,7 @@ def create_guild(json: CreateGuildObject, headers: AuthorizationObject):
 @guilds.input(EditGuild)
 @guilds.input(Authorization, 'headers')
 def edit_guild(guild_id: int, json: EditGuildObject, headers: AuthorizationObject):
-    user = authorize()
+    user = authorize(headers['authorization'], 'id')
 
 
 @guilds.delete('/guilds/<int:guild_id>')
