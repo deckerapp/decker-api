@@ -1,17 +1,9 @@
 """
-Copyright 2021-2022 Derailed.
+Elastic License 2.0
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+Copyright Decker and/or licensed to Decker under one
+or more contributor license agreements. Licensed under the Elastic License;
+you may not use this file except in compliance with the Elastic License.
 """
 from __future__ import annotations
 
@@ -22,7 +14,7 @@ if TYPE_CHECKING:
     from typing_extensions import NotRequired
 
 from apiflask import Schema
-from apiflask.fields import Boolean, Email, Integer, String
+from apiflask.fields import Boolean, Email, Integer, Nested, String
 from apiflask.validators import Length, Regexp
 
 discriminatoregex = re.compile(r'^[0-9]{4}$')
@@ -69,7 +61,7 @@ class AuthorizationObject(TypedDict):
 
 
 class PublicUserObject(Schema):
-    id: int = Integer()
+    id: str = String()
     username: str = String()
     discriminator: str = String()
     avatar: str = String()
@@ -92,3 +84,25 @@ class CreateTokenObject(TypedDict):
     email: str
     password: str
     mfa_code: NotRequired[str]
+
+
+class SessionLimit(Schema):
+    total = Integer()
+    remaining = Integer()
+    max_concurrency = Integer()
+
+
+class Gateway(Schema):
+    url = String()
+    shards = Integer()
+    session_start_limit = Nested(SessionLimit)
+
+
+class Note(Schema):
+    user_id = Integer()
+    content = String(required=True, validate=(Length(1, 1000)))
+
+
+class NoteObject(TypedDict):
+    user_id: int
+    content: str

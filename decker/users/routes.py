@@ -1,26 +1,32 @@
 """
-Copyright 2021-2022 Derailed.
+Elastic License 2.0
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+Copyright Decker and/or licensed to Decker under one
+or more contributor license agreements. Licensed under the Elastic License;
+you may not use this file except in compliance with the Elastic License.
 """
 import random
 import secrets
 
 import pyotp
 from apiflask import APIBlueprint, HTTPError
+from apiflask.schemas import EmptySchema
 from argon2 import PasswordHasher, exceptions
 
-from ..database import RecoveryCode, Settings, User, create_token, verify_token
+from ..database import (
+    Event,
+    GatewaySessionLimit,
+    Member,
+    Note,
+    NotFound,
+    RecoveryCode,
+    Settings,
+    User,
+    create_token,
+    dispatch_event,
+    objectify,
+    verify_token,
+)
 from ..ratelimiter import limiter
 from .schemas import (
     Authorization,
@@ -31,12 +37,13 @@ from .schemas import (
     CreateUserObject,
     EditUser,
     EditUserObject,
-    Register,
-    UserObject,
+    Gateway,
 )
+from .schemas import Note as NoteSchema
+from .schemas import NoteObject, Register, UserObject
 
 users = APIBlueprint('users', __name__)
-registerr = APIBlueprint('register', 'derailedapi.register')
+registerr = APIBlueprint('register', 'decker.register')
 hasher = PasswordHasher()
 
 
@@ -73,7 +80,7 @@ def get_available_discriminator(username: str):
             User.objects(
                 User.username == username, User.discriminator == discriminator
             ).get()
-        except:
+        except NotFound:
             return discriminator
         else:
             continue
@@ -86,14 +93,18 @@ def is_available(username: str, discriminator: int):
         User.objects(
             User.username == username, User.discriminator == discriminator
         ).get()
-    except:
+    except NotFound:
         return
     else:
         raise HTTPError(400, 'Discriminator is already taken')
 
 
-def authorize(token: str) -> User:
-    return verify_token(token=token)
+def authorize(
+    token: str | None,
+    fields: list[str] | None = None,
+    rm_fields: list[str] | str | None = None,
+) -> User:
+    return verify_token(token=token, fields=fields, rm_fields=rm_fields)
 
 
 def verify_mfa(user_id: int, code: int | str | None) -> None:
@@ -115,17 +126,10 @@ def verify_mfa(user_id: int, code: int | str | None) -> None:
             raise HTTPError(403, 'mfa code is invalid.')
 
 
-@registerr.post('/register')
-@limiter.limit('2/hour')
-@registerr.input(CreateUser)
-@registerr.output(
-    Register, 201, description='The token which you will use for authentication'
-)
-@registerr.doc(tag='Users')
-def register(json: CreateUserObject):
+def create_user(json: CreateUser) -> User:
     try:
         User.objects(User.email == json['email']).get()
-    except:
+    except NotFound:
         pass
     else:
         raise HTTPError(400, 'This email is already used.')
@@ -145,6 +149,19 @@ def register(json: CreateUserObject):
     )
     Settings.create(user_id=user.id)
 
+    return user
+
+
+@registerr.post('/register')
+@limiter.limit('2/hour')
+@registerr.input(CreateUser)
+@registerr.output(
+    Register, 201, description='The token which you will use for authentication'
+)
+@registerr.doc(tag='Users')
+def register(json: CreateUserObject):
+    user = create_user(json=json)
+
     return {'token': create_token(user_id=user.id, user_password=user.password)}
 
 
@@ -153,14 +170,12 @@ def register(json: CreateUserObject):
 @users.output(UserObject)
 @users.doc(tag='Users')
 def get_me(headers: AuthorizationObject):
-    me = authorize(headers['authorization'])
+    me = authorize(headers['authorization'], rm_fields=['password'])
 
     if me.verified is None:
         me = me.update(verified=False)
 
-    u = dict(me)
-    u.pop('password')
-    return u
+    return dict(me)
 
 
 @users.post('/login')
@@ -172,7 +187,7 @@ def login(json: CreateTokenObject):
         with_pswd: User = (
             User.objects(User.email == json['email']).only(['password', 'id']).get()
         )
-    except:
+    except NotFound:
         raise HTTPError(400, 'Invalid email or password')
 
     try:
@@ -221,7 +236,102 @@ def edit_me(json: EditUserObject, headers: AuthorizationObject):
     if password:
         query['password'] = hasher.hash(password=password)
 
+        dispatch_event(
+            'security',
+            Event(
+                'USER_INTERNAL_DISCONNECT', {'type': 'password-change'}, user_id=user.id
+            ),
+        )
+
     update = user.update(**query)
     ret = dict(update)
-    ret.pop('password')
-    return ret
+    return objectify(ret)
+
+
+@users.get('/gateway')
+@users.input(Authorization, 'headers')
+@users.output(Gateway)
+@users.doc(tag='Users')
+def get_gateway(headers: AuthorizationObject):
+    user = authorize(headers['authorization'], ['id'])
+
+    try:
+        gateway_session_limit = dict(
+            GatewaySessionLimit.objects(GatewaySessionLimit.user_id == user.id)
+            .defer(['user_id'])
+            .get()
+        )
+    except NotFound:
+        gateway_session_limit = dict(GatewaySessionLimit.create(user_id=user.id))
+        gateway_session_limit.pop('user_id')
+
+    if user.bot:
+        guild_count = Member.objects(Member.user_id == user.id).count()
+
+        shards = max(int(guild_count / 1000), 1)
+    else:
+        shards = 1
+
+    return {
+        'url': 'wss://gateway.derailed.one',
+        'shards': shards,
+        'session_start_limit': gateway_session_limit,
+    }
+
+
+@users.get('/users/@me/notes')
+@users.input(Authorization, 'headers')
+@users.output(NoteSchema(many=True))
+@users.doc(tag='Notes')
+async def get_notes(headers: AuthorizationObject):
+    user = authorize(headers['authorization'], ['id'])
+
+    notes = Note.objects(Note.creator_id == user.id).defer(['creator_id']).all()
+
+    return [objectify(dict(note)) for note in notes]
+
+
+@users.get('/users/@me/notes/<int:user_id>')
+@users.input(Authorization, 'headers')
+@users.output(NoteSchema)
+@users.doc(tag='Notes')
+async def get_note(user_id: int, headers: AuthorizationObject):
+    user = authorize(headers['authorization'], ['id'])
+
+    try:
+        note = (
+            Note.objects(Note.creator_id == user.id, Note.user_id == user_id)
+            .defer(['creator_id'])
+            .get()
+        )
+    except NotFound:
+        raise HTTPError(404, 'Note for user not found')
+
+    return objectify(dict(note))
+
+
+@users.post('/users/@me/notes')
+@users.input(Authorization, 'headers')
+@users.input(NoteSchema, 'json')
+@users.output(EmptySchema)
+@users.doc(tag='Notes')
+async def create_note(headers: AuthorizationObject, json: NoteObject):
+    user = authorize(headers['authorization'], ['id'])
+
+    try:
+        User.objects(User.id == json['user_id']).only(['id']).get()
+    except NotFound:
+        raise HTTPError(400, 'User does not exist')
+
+    try:
+        note: Note = (
+            Note.objects(Note.creator_id == user.id, Note.user_id == json['user_id'])
+            .defer(['creator_id'])
+            .get()
+        )
+    except NotFound:
+        Note.create(
+            creator_id=user.id, user_id=json['user_id'], content=json['content']
+        )
+    else:
+        note.update(content=json['content'])

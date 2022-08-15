@@ -1,56 +1,58 @@
 """
-Copyright 2021-2022 Derailed.
+Elastic License 2.0
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+Copyright Decker and/or licensed to Decker under one
+or more contributor license agreements. Licensed under the Elastic License;
+you may not use this file except in compliance with the Elastic License.
 """
+import logging
+import os
+
 from apiflask import APIFlask
 from dotenv import load_dotenv
 
-from derailedapi import ratelimiter
-from derailedapi.json import ORJSONDecoder, ORJSONEncoder
-from derailedapi.relationships.routes import relationships
-from derailedapi.users.routes import registerr, users
+from decker import ratelimiter
+from decker.guilds.routes import guilds
+from decker.json import ORJSONDecoder, ORJSONEncoder
+from decker.relationships.routes import relationships
+from decker.users.routes import registerr, users
 
 load_dotenv()
 
-from derailedapi.database import connect, sync_tables
+import sentry_sdk
 
+from decker.database import connect, sync_tables
+
+# TODO: Test and maybe modify traces_sample_rate.
+sentry_sdk.init(dsn=os.getenv('SENTRY_DSN'), traces_sample_rate=1.0)
 connect()
 sync_tables()
 
 app = APIFlask(
     __name__,
-    title='Derailed API',
-    version='v0',
-    spec_path='/openapi.json',
+    title='Decker API',
+    version='v1',
+    spec_path='/__development/openapi.json',
+    docs_path='/__development/board',
     docs_ui='elements',
-    docs_path='/',
 )
 
 ratelimiter.limiter.init_app(app=app)
 app.config['INFO'] = {
-    'description': 'The API for Derailed.',
+    'description': 'The API for Decker.',
     'termsOfService': 'https://derailed.one/terms',
     'contact': {'name': 'Support', 'email': 'support@derailed.one'},
     'license': {
-        'name': 'Apache-2.0',
-        'url': 'https://www.apache.org/licenses/LICENSE-2.0',
+        'name': 'ELv2',
+        'url': 'https://www.elastic.co/licensing/elastic-license',
     },
 }
-app.config['SERVERS'] = [
-    {'name': 'Production', 'url': 'https://derailed.one/api'},
+app.tags = [
+    'Users',
+    'Relationships',
+    'Guilds',
+    'Notes',
 ]
-app.tags = ['Users', 'Relationships']
 app.json_encoder = ORJSONEncoder
 app.json_decoder = ORJSONDecoder
 
@@ -59,8 +61,9 @@ app.json_decoder = ORJSONDecoder
 app.register_blueprint(registerr)
 app.register_blueprint(users)
 app.register_blueprint(relationships)
+app.register_blueprint(guilds)
 ratelimiter.limiter.limit('2/hour')(registerr)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True)
