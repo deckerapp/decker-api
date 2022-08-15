@@ -1,7 +1,7 @@
 """
 Elastic License 2.0
 
-Copyright Couchub and/or licensed to Couchub under one
+Copyright Decker and/or licensed to Decker under one
 or more contributor license agreements. Licensed under the Elastic License;
 you may not use this file except in compliance with the Elastic License.
 """
@@ -43,7 +43,7 @@ from .schemas import Note as NoteSchema
 from .schemas import NoteObject, Register, UserObject
 
 users = APIBlueprint('users', __name__)
-registerr = APIBlueprint('register', 'couchub.register')
+registerr = APIBlueprint('register', 'decker.register')
 hasher = PasswordHasher()
 
 

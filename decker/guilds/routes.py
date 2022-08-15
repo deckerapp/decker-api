@@ -1,34 +1,43 @@
 """
 Elastic License 2.0
 
-Copyright Couchub and/or licensed to Couchub under one
+Copyright Decker and/or licensed to Decker under one
 or more contributor license agreements. Licensed under the Elastic License;
 you may not use this file except in compliance with the Elastic License.
 """
 
 from datetime import datetime, timezone
+from typing import Any
 
 from apiflask import APIBlueprint, HTTPError
 from apiflask.schemas import EmptySchema
 
-from couchub.constants import MAX_GUILDS
-from couchub.database import (
+from decker.constants import MAX_GUILDS
+from decker.database import (
     CategoryChannel,
     Channel,
     EmptyBucket,
     Event,
     Guild,
     Member,
+    MemberRole,
     Message,
     NotFound,
+    Role,
     Settings,
     TextChannel,
     dispatch_event,
     objectify,
 )
-from couchub.enums import ChannelType, MessageType, PermissionBooler
-from couchub.users.routes import authorize
-from couchub.users.schemas import Authorization, AuthorizationObject
+from decker.enums import (
+    ChannelType,
+    MessageType,
+    PermissionBooler,
+    Value,
+    get_core_value,
+)
+from decker.users.routes import authorize
+from decker.users.schemas import Authorization, AuthorizationObject
 
 from ..enforgement import forger
 from .schemas import (
@@ -59,11 +68,6 @@ def create_member(
         owner=owner,
         joined_at=datetime.now(timezone.utc),
     )
-
-
-# TODO: Move this and create_message to channels/messages
-def create_channel(name: str | None, type: int) -> Channel:
-    return Channel.create(id=forger.forge(), name=name, type=type)
 
 
 def create_message(
@@ -141,6 +145,41 @@ def get_messages(
         raise HTTPError(404, 'Message not found')
 
 
+def get_member(user_id: int, guild_id: int, only: list[str] | None = None) -> Member:
+    if only:
+        return (
+            Member.objects(Member.user_id == user_id, Member.guild_id == guild_id)
+            .only(only)
+            .get()
+        )
+    else:
+        return Member.objects(
+            Member.user_id == user_id, Member.guild_id == guild_id
+        ).get()
+
+
+def get_member_permissions(user_id: int, guild_id: int) -> PermissionBooler:
+    values: list[Value] = []
+    member_roles: list[MemberRole] = (
+        MemberRole.objects(
+            MemberRole.user_id == user_id, MemberRole.guild_id == guild_id
+        )
+        .only(['role_id'])
+        .all()
+    )
+
+    for mrole in member_roles:
+        role: Role = (
+            Role.objects(Role.id == mrole.role_id, Role.guild_id == guild_id)
+            .only(['position', 'permissions'])
+            .get()
+        )
+
+        values.append(Value(position=role.position, value=role.permissions))
+
+    return PermissionBooler(get_core_value(*values))
+
+
 @guilds.post('/guilds')
 @guilds.input(CreateGuild)
 @guilds.input(Authorization, 'headers')
@@ -171,21 +210,24 @@ def create_guild(json: CreateGuildObject, headers: AuthorizationObject):
     member = create_member(user_id=user.id, guild_id=guild.id, owner=True)
 
     # create essential channels
-    es_tcs = create_channel('Text Channels', ChannelType.CATEGORY)
-
-    m1 = CategoryChannel.create(channel_id=es_tcs.id, guild_id=guild.id, position=1)
-
-    es_general = create_channel('general', ChannelType.TEXT)
-
-    m2 = TextChannel.create(
-        channel_id=es_general.id, guild_id=guild.id, position=1, parent_id=es_tcs.id
+    m1: CategoryChannel = CategoryChannel.create(
+        id=forger.forge(),
+        name='Text Channels',
+        guild_id=guild.id,
+        position=1,
+        type=ChannelType.CATEGORY,
+    )
+    m2: TextChannel = TextChannel.create(
+        id=forger.forge(),
+        name='general',
+        guild_id=guild.id,
+        position=1,
+        parent_id=m1.id,
+        type=ChannelType.TEXT,
     )
 
-    merged_category = dict(es_tcs) | m1
-    merged_text_channel = dict(es_general) | m2
-
     message = create_message(
-        channel_id=es_general.id,
+        channel_id=m1.id,
         content=f'<@{user.id}>',
         author_id=user.id,
         type=MessageType.JOIN,
@@ -195,11 +237,11 @@ def create_guild(json: CreateGuildObject, headers: AuthorizationObject):
         'guilds', Event('GUILD_CREATE', objectify(dict(guild)), user_id=user.id)
     )
     dispatch_event(
-        'channels', Event('CHANNEL_CREATE', objectify(merged_category), user_id=user.id)
+        'channels', Event('CHANNEL_CREATE', objectify(dict(m1)), user_id=user.id)
     )
     dispatch_event(
         'channels',
-        Event('CHANNEL_CREATE', objectify(merged_text_channel), user_id=user.id),
+        Event('CHANNEL_CREATE', objectify(dict(m2)), user_id=user.id),
     )
     dispatch_event(
         'members', Event('MEMBER_JOIN', objectify(dict(member)), user_id=user.id)
@@ -214,8 +256,46 @@ def create_guild(json: CreateGuildObject, headers: AuthorizationObject):
 @guilds.patch('/guilds/<int:guild_id>')
 @guilds.input(EditGuild)
 @guilds.input(Authorization, 'headers')
+@guilds.output(FullGuild)
 def edit_guild(guild_id: int, json: EditGuildObject, headers: AuthorizationObject):
     user = authorize(headers['authorization'], 'id')
+
+    try:
+        member = get_member(user_id=user.id, guild_id=guild_id, only=['owner'])
+    except NotFound:
+        raise HTTPError(403, 'You are not a member of this Guild')
+
+    if not member.owner:
+        permissions = get_member_permissions(user_id=user.id, guild_id=guild_id)
+
+        if not permissions.manage_guild:
+            raise HTTPError(
+                403, 'MANAGE_GUILD permissions are required for this action.'
+            )
+
+    changes: dict[str, Any] = {}
+
+    if json.get('name'):
+        changes['name'] = json.pop('name')
+
+    if json.get('default_permissions'):
+        changes['default_permissions'] = json.pop('default_permissions')
+
+    if json.get('default_notification_level'):
+        changes['default_message_notification_level'] = json.pop(
+            'default_notification_level'
+        )
+
+    if json.get('default_permissions'):
+        changes['default_permissions'] = json.pop('default_permissions')
+
+    guild: Guild = Guild.objects(Guild.id == guild_id).get()
+    guild = guild.update(**changes)
+    guild_data = dict(guild)
+
+    dispatch_event('guilds', Event(name='GUILD_UPDATE', data=guild_data, guild_id=guild.id))
+
+    return guild_data
 
 
 @guilds.delete('/guilds/<int:guild_id>')
@@ -258,9 +338,6 @@ def delete_guild(guild_id: int, headers: AuthorizationObject):
         for bucket in empty_buckets:
             bucket.delete()
 
-        channel = Channel.objects(Channel.id == text_channel.channel_id).get()
-
-        channel.delete()
         text_channel.delete()
 
     for category_channel in category_channels:
@@ -281,9 +358,6 @@ def delete_guild(guild_id: int, headers: AuthorizationObject):
         for bucket in empty_buckets:
             bucket.delete()
 
-        channel = Channel.objects(Channel.id == category_channel.channel_id).get()
-
-        channel.delete()
         category_channel.delete()
 
     members: list[Member] = Member.objects(Member.guild_id == guild.id).all()

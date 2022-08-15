@@ -1,7 +1,7 @@
 """
 Elastic License 2.0
 
-Copyright Couchub and/or licensed to Couchub under one
+Copyright Decker and/or licensed to Decker under one
 or more contributor license agreements. Licensed under the Elastic License;
 you may not use this file except in compliance with the Elastic License.
 """
@@ -30,7 +30,7 @@ class SnowflakeFactory:
         # or get enough messages to return.
         # Eventually, elasticsearch will need to be used for querying through massive
         # amounts and searching old messages but for now it’s fine.
-        # Couchub will store empty buckets once found in a channel
+        # Decker will store empty buckets once found in a channel
         # to reduce the effects of querying through useless buckets.
         self._bucket_size = 1000 * 60 * 60 * 24 * 10
 

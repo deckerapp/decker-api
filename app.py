@@ -1,7 +1,7 @@
 """
 Elastic License 2.0
 
-Copyright Couchub and/or licensed to Couchub under one
+Copyright Decker and/or licensed to Decker under one
 or more contributor license agreements. Licensed under the Elastic License;
 you may not use this file except in compliance with the Elastic License.
 """
@@ -11,17 +11,17 @@ import os
 from apiflask import APIFlask
 from dotenv import load_dotenv
 
-from couchub import ratelimiter
-from couchub.guilds.routes import guilds
-from couchub.json import ORJSONDecoder, ORJSONEncoder
-from couchub.relationships.routes import relationships
-from couchub.users.routes import registerr, users
+from decker import ratelimiter
+from decker.guilds.routes import guilds
+from decker.json import ORJSONDecoder, ORJSONEncoder
+from decker.relationships.routes import relationships
+from decker.users.routes import registerr, users
 
 load_dotenv()
 
 import sentry_sdk
 
-from couchub.database import connect, sync_tables
+from decker.database import connect, sync_tables
 
 # TODO: Test and maybe modify traces_sample_rate.
 sentry_sdk.init(dsn=os.getenv('SENTRY_DSN'), traces_sample_rate=1.0)
@@ -30,7 +30,7 @@ sync_tables()
 
 app = APIFlask(
     __name__,
-    title='Couchub API',
+    title='Decker API',
     version='v1',
     spec_path='/__development/openapi.json',
     docs_path='/__development/board',
@@ -39,7 +39,7 @@ app = APIFlask(
 
 ratelimiter.limiter.init_app(app=app)
 app.config['INFO'] = {
-    'description': 'The API for Couchub.',
+    'description': 'The API for Decker.',
     'termsOfService': 'https://derailed.one/terms',
     'contact': {'name': 'Support', 'email': 'support@derailed.one'},
     'license': {

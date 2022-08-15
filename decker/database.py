@@ -1,7 +1,7 @@
 """
 Elastic License 2.0
 
-Copyright Couchub and/or licensed to Couchub under one
+Copyright Decker and/or licensed to Decker under one
 or more contributor license agreements. Licensed under the Elastic License;
 you may not use this file except in compliance with the Elastic License.
 """
@@ -19,8 +19,8 @@ from cassandra.cqlengine import columns, connection, management, models, query
 from cassandra.io import asyncorereactor, geventreactor
 from kafka import KafkaProducer
 
-from couchub.enforgement import forger
-from couchub.enums import MFALevel, NotificationLevel
+from decker.enforgement import forger
+from decker.enums import MFALevel, NotificationLevel
 
 auth_provider = PlainTextAuthProvider(
     os.getenv('SCYLLA_USER'), os.getenv('SCYLLA_PASSWORD')
@@ -44,7 +44,7 @@ def connect():
 
     connection.setup(
         get_hosts('SCYLLA_HOSTS'),
-        'couchub',
+        'decker',
         auth_provider=auth_provider,
         connect_timeout=100,
         retry_connect=True,
@@ -60,7 +60,7 @@ def get_trace():
     proc = os.getpid()
     thread = threading.current_thread().ident
 
-    return f'couchub-api-{thread}-{proc}'
+    return f'decker-api-{thread}-{proc}'
 
 
 class Event(msgspec.Struct):
@@ -153,22 +153,19 @@ class Recipient(models.Model):
     user_id: int = columns.BigInt(index=True)
 
 
-class DMChannel(models.Model):
-    __table_name__ = 'dm_channels'
-    channel_id: int = columns.BigInt(primary_key=True)
+class DMChannel(Channel):
+    __discriminator_value__ = 'dm_channels'
     last_message_id: int = columns.BigInt()
 
 
 class GroupDMChannel(DMChannel):
-    __table_name__ = 'group_dm_channels'
+    __discriminator_value__ = 'group_dm_channels'
 
-    channel_id: int = columns.BigInt(primary_key=True)
     icon: str = columns.Text()
     owner_id: int = columns.BigInt()
 
 
-class GuildChannel(models.Model):
-    channel_id: int = columns.BigInt(primary_key=True)
+class GuildChannel(Channel):
     guild_id: int = columns.BigInt(index=True)
     position: int = columns.Integer()
     parent_id: int = columns.BigInt()
@@ -176,11 +173,11 @@ class GuildChannel(models.Model):
 
 
 class CategoryChannel(GuildChannel):
-    __table_name__ = 'category_channels'
+    __discriminator_value__ = 'category_channels'
 
 
 class TextChannel(GuildChannel):
-    __table_name__ = 'guild_text_channels'
+    __discriminator_value__ = 'guild_text_channels'
 
     rate_limit_per_user: int = columns.Integer(default=0)
     topic: str = columns.Text()
@@ -242,8 +239,8 @@ class Member(models.Model):
 class MemberRole(models.Model):
     __table_name__ = 'member_roles'
     guild_id: int = columns.BigInt(primary_key=True)
-    user_id: int = columns.BigInt(index=True)
-    role_id: int = columns.BigInt()
+    user_id: int = columns.BigInt(primary_key=True)
+    role_id: int = columns.BigInt(index=True)
 
 
 class Ban(models.Model):

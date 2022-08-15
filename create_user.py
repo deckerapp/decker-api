@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 
-from couchub.database import connect, sync_tables
-from couchub.users import routes
+from decker.database import connect, sync_tables
+from decker.users import routes
 
 load_dotenv()
 

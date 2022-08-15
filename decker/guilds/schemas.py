@@ -1,7 +1,7 @@
 """
 Elastic License 2.0
 
-Copyright Couchub and/or licensed to Couchub under one
+Copyright Decker and/or licensed to Decker under one
 or more contributor license agreements. Licensed under the Elastic License;
 you may not use this file except in compliance with the Elastic License.
 """
@@ -12,7 +12,7 @@ from apiflask.fields import Boolean, DateTime, Integer, Nested, String
 from apiflask.validators import Length, OneOf
 from typing_extensions import NotRequired
 
-from couchub.users.schemas import PublicUserObject
+from decker.users.schemas import PublicUserObject
 
 
 class CreateGuild(Schema):
@@ -34,12 +34,12 @@ class EditGuild(Schema):
 
 
 class EditGuildObject(TypedDict):
-    name: str
-    icon: str
-    banner: str
-    default_permissions: int
-    default_notification_level: Literal[0, 1]
-    mfa_level: Literal[0, 1]
+    name: NotRequired[str]
+    icon: NotRequired[str]
+    banner: NotRequired[str]
+    default_permissions: NotRequired[int]
+    default_notification_level: NotRequired[Literal[0, 1]]
+    mfa_level: NotRequired[Literal[0, 1]]
 
 
 class CreateGuildObject(TypedDict):
@@ -56,28 +56,17 @@ class PartialGuild(Schema):
 
 class PreviewGuild(PartialGuild):
     icon: str = String()
-    splash: str = String()
-    max_presences: int = Integer()
-    max_members: int = Integer()
+    max_members = Integer()
 
 
 class FullGuild(PreviewGuild):
-    discovery_splash: str = String()
     default_permissions = String()
-    afk_channel_id = String()
-    afk_timeout = Integer()
     default_message_notification_level = Integer()
-    explicit_content_filter = Integer()
     mfa_level = Integer()
-    system_channel_id = String()
-    system_channel_flags = Integer()
-    rules_channel_id = String()
     vanity_url_code = String()
     description = String()
     banner = String()
     preferred_locale = String()
-    guild_updates_channel_id = String()
-    nsfw_level = Integer()
 
 
 class GuildChannel(Schema):
